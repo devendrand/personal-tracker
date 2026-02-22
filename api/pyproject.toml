@@ -1,0 +1,21 @@
+[project]
+name = "trade-tracker-api"
+version = "0.1.0"
+description = "Trade Tracker & Portfolio Analytics API"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "alembic>=1.16.5",
+    "asyncpg>=0.31.0",
+    "fastapi[standard]>=0.128.8",
+    "passlib[bcrypt]>=1.7.4",
+    "pydantic-settings>=2.11.0",
+    "python-jose[cryptography]>=3.5.0",
+    "sqlalchemy[asyncio]>=2.0.46",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=8.4.2",
+]
