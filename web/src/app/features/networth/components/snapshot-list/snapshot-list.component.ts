@@ -229,7 +229,7 @@ export class SnapshotListComponent implements OnInit {
     }
   }
 
-  onPage(event: PageEvent): void {
+  onPage(_event: PageEvent): void {
     // Pagination handled by mat-paginator for client-side
   }
 }

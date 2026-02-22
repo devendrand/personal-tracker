@@ -7,7 +7,7 @@ import { CanActivateFn, Router } from '@angular/router';
  * STUB: Currently checks for token in localStorage.
  * Will be enhanced with proper auth service in future milestone.
  */
-export const authGuard: CanActivateFn = (route, state) => {
+export const authGuard: CanActivateFn = (_route, _state) => {
   const router = inject(Router);
   const token = localStorage.getItem('access_token');
   

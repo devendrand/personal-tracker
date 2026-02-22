@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -15,11 +15,6 @@ import { Router, RouterLink } from '@angular/router';
 
 import { NetWorthService } from '../../services/networth.service';
 import { NWAccount, NWSnapshotCreate, formatCurrency, getCategoryDisplayName, AccountType } from '../../models/networth.model';
-
-interface AccountBalance {
-  account: NWAccount;
-  balance: number;
-}
 
 @Component({
   selector: 'app-snapshot-entry',

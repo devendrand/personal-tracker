@@ -322,7 +322,7 @@ export class NetWorthDashboardComponent implements OnInit {
     });
   }
 
-  getAssetCategories(): Array<{ category: string; amount: number }> {
+  getAssetCategories(): { category: string; amount: number }[] {
     const summary = this.summary();
     if (!summary) return [];
     return Object.entries(summary.assetsByCategory)
@@ -330,7 +330,7 @@ export class NetWorthDashboardComponent implements OnInit {
       .sort((a, b) => b.amount - a.amount);
   }
 
-  getLiabilityCategories(): Array<{ category: string; amount: number }> {
+  getLiabilityCategories(): { category: string; amount: number }[] {
     const summary = this.summary();
     if (!summary) return [];
     return Object.entries(summary.liabilitiesByCategory)

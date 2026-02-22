@@ -220,7 +220,7 @@ export class TimeListComponent implements OnInit {
     }
   }
 
-  onPage(event: PageEvent): void {
+  onPage(_event: PageEvent): void {
     // Client-side pagination is handled by mat-paginator
     // For server-side pagination, implement here
   }

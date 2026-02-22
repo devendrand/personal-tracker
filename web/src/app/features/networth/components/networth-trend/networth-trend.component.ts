@@ -9,7 +9,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { NetWorthService } from '../../services/networth.service';
-import { NetWorthTrendResponse, TrendDataPoint, formatCurrency } from '../../models/networth.model';
+import { NetWorthTrendResponse, formatCurrency } from '../../models/networth.model';
 
 @Component({
   selector: 'app-networth-trend',
