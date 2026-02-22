@@ -78,8 +78,8 @@ export class NetWorthService {
     return this.http.delete<void>(`${this.baseUrl}/snapshots/${id}`);
   }
 
-  getSnapshotPrefill(): Observable<Array<{ accountId: number; name: string; lastBalance: number }>> {
-    return this.http.get<Array<{ accountId: number; name: string; lastBalance: number }>>(
+  getSnapshotPrefill(): Observable<{ accountId: number; name: string; lastBalance: number }[]> {
+    return this.http.get<{ accountId: number; name: string; lastBalance: number }[]>(
       `${this.baseUrl}/snapshots/prefill`
     );
   }

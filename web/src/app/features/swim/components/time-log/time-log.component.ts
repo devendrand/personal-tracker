@@ -13,7 +13,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { Router, RouterLink } from '@angular/router';
 
 import { SwimService } from '../../services/swim.service';
-import { SwimEvent, Swimmer, PoolType, SwimTimeCreate } from '../../models/swim.model';
+import { SwimEvent, Swimmer, SwimTimeCreate } from '../../models/swim.model';
 
 @Component({
   selector: 'app-time-log',
