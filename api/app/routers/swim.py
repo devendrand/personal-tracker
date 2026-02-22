@@ -1,28 +1,28 @@
 """Swim Performance Tracker - API routes (stub implementation)."""
 
 from datetime import date
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
 
 from app.schemas.swim import (
-    SwimmerCreate,
-    SwimmerUpdate,
-    SwimmerResponse,
+    EventProgressionResponse,
+    PRDashboardRow,
     SwimEventResponse,
     SwimMeetCreate,
     SwimMeetResponse,
+    SwimmerCreate,
+    SwimmerResponse,
+    SwimmerUpdate,
     SwimTimeCreate,
-    SwimTimeUpdate,
     SwimTimeResponse,
-    PRDashboardRow,
-    EventProgressionResponse,
+    SwimTimeUpdate,
 )
 
 router = APIRouter(prefix="/swim", tags=["swim"])
 
 
 # --- Swimmer Endpoints ---
+
 
 @router.get("/swimmers", response_model=list[SwimmerResponse])
 async def list_swimmers():
@@ -61,10 +61,11 @@ async def delete_swimmer(swimmer_id: int):
 
 # --- Swim Event Endpoints ---
 
+
 @router.get("/events", response_model=list[SwimEventResponse])
 async def list_events(
-    pool_type: Optional[str] = Query(None, pattern=r"^(SCY|SCM|LCM)$"),
-    stroke: Optional[str] = None,
+    pool_type: str | None = Query(None, pattern=r"^(SCY|SCM|LCM)$"),
+    stroke: str | None = None,
 ):
     """List all swim events, optionally filtered."""
     # TODO: Implement with database query
@@ -80,9 +81,10 @@ async def get_event(event_id: int):
 
 # --- Swim Meet Endpoints ---
 
+
 @router.get("/meets", response_model=list[SwimMeetResponse])
 async def list_meets(
-    year: Optional[int] = None,
+    year: int | None = None,
 ):
     """List all swim meets, optionally filtered by year."""
     # TODO: Implement with database query
@@ -105,11 +107,12 @@ async def get_meet(meet_id: int):
 
 # --- Swim Time Endpoints ---
 
+
 @router.get("/swimmers/{swimmer_id}/times", response_model=list[SwimTimeResponse])
 async def list_times(
     swimmer_id: int,
-    event_id: Optional[int] = None,
-    pool_type: Optional[str] = Query(None, pattern=r"^(SCY|SCM|LCM)$"),
+    event_id: int | None = None,
+    pool_type: str | None = Query(None, pattern=r"^(SCY|SCM|LCM)$"),
     prs_only: bool = False,
 ):
     """List times for a swimmer, optionally filtered."""
@@ -148,23 +151,26 @@ async def delete_time(swimmer_id: int, time_id: int):
 
 # --- Report Endpoints ---
 
+
 @router.get("/swimmers/{swimmer_id}/prs", response_model=list[PRDashboardRow])
 async def get_pr_dashboard(
     swimmer_id: int,
-    pool_type: Optional[str] = Query(None, pattern=r"^(SCY|SCM|LCM)$"),
+    pool_type: str | None = Query(None, pattern=r"^(SCY|SCM|LCM)$"),
 ):
     """Get PR dashboard showing all events with improvement stats."""
     # TODO: Implement with database query
     return []
 
 
-@router.get("/swimmers/{swimmer_id}/progression/{event_id}", response_model=EventProgressionResponse)
+@router.get(
+    "/swimmers/{swimmer_id}/progression/{event_id}", response_model=EventProgressionResponse
+)
 async def get_event_progression(
     swimmer_id: int,
     event_id: int,
     pool_type: str = Query(..., pattern=r"^(SCY|SCM|LCM)$"),
-    start_date: Optional[date] = None,
-    end_date: Optional[date] = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
 ):
     """Get time progression chart data for a specific event."""
     # TODO: Implement with database query

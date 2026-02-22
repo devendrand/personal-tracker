@@ -1,21 +1,20 @@
 """Net Worth Tracker - API routes (stub implementation)."""
 
 from datetime import date
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
 
 from app.schemas.networth import (
-    NWAccountCreate,
-    NWAccountUpdate,
-    NWAccountResponse,
-    NWSnapshotCreate,
-    NWSnapshotUpdate,
-    NWSnapshotResponse,
-    NWSnapshotSummary,
+    CategoryBreakdown,
     NetWorthSummary,
     NetWorthTrendResponse,
-    CategoryBreakdown,
+    NWAccountCreate,
+    NWAccountResponse,
+    NWAccountUpdate,
+    NWSnapshotCreate,
+    NWSnapshotResponse,
+    NWSnapshotSummary,
+    NWSnapshotUpdate,
 )
 
 router = APIRouter(prefix="/networth", tags=["networth"])
@@ -23,10 +22,11 @@ router = APIRouter(prefix="/networth", tags=["networth"])
 
 # --- Account Endpoints ---
 
+
 @router.get("/accounts", response_model=list[NWAccountResponse])
 async def list_accounts(
-    account_type: Optional[str] = Query(None, pattern=r"^(asset|liability)$"),
-    category: Optional[str] = None,
+    account_type: str | None = Query(None, pattern=r"^(asset|liability)$"),
+    category: str | None = None,
     active_only: bool = True,
 ):
     """List all accounts, optionally filtered."""
@@ -64,9 +64,10 @@ async def delete_account(account_id: int):
 
 # --- Snapshot Endpoints ---
 
+
 @router.get("/snapshots", response_model=list[NWSnapshotSummary])
 async def list_snapshots(
-    year: Optional[int] = None,
+    year: int | None = None,
     limit: int = Query(52, ge=1, le=520),  # Default ~1 year of weekly snapshots
 ):
     """List snapshots, most recent first."""
@@ -112,6 +113,7 @@ async def delete_snapshot(snapshot_id: int):
 
 # --- Pre-fill Endpoint ---
 
+
 @router.get("/snapshots/prefill", response_model=list[dict])
 async def get_snapshot_prefill():
     """Get account list with last known balances for quick entry."""
@@ -120,6 +122,7 @@ async def get_snapshot_prefill():
 
 
 # --- Report Endpoints ---
+
 
 @router.get("/summary", response_model=NetWorthSummary)
 async def get_net_worth_summary():
@@ -130,8 +133,8 @@ async def get_net_worth_summary():
 
 @router.get("/trend", response_model=NetWorthTrendResponse)
 async def get_net_worth_trend(
-    start_date: Optional[date] = None,
-    end_date: Optional[date] = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
     period: str = Query("1y", pattern=r"^(3m|6m|1y|2y|all)$"),
 ):
     """Get net worth trend data for charting."""

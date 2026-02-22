@@ -1,34 +1,37 @@
 """Swim Performance Tracker - Pydantic schemas."""
 
 from datetime import date
-from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
-
 # --- Swimmer Schemas ---
+
 
 class SwimmerBase(BaseModel):
     """Base swimmer schema."""
+
     name: str = Field(..., min_length=1, max_length=255)
     date_of_birth: date
-    team_name: Optional[str] = Field(None, max_length=255)
+    team_name: str | None = Field(None, max_length=255)
 
 
 class SwimmerCreate(SwimmerBase):
     """Schema for creating a swimmer."""
+
     pass
 
 
 class SwimmerUpdate(BaseModel):
     """Schema for updating a swimmer."""
-    name: Optional[str] = Field(None, min_length=1, max_length=255)
-    date_of_birth: Optional[date] = None
-    team_name: Optional[str] = Field(None, max_length=255)
+
+    name: str | None = Field(None, min_length=1, max_length=255)
+    date_of_birth: date | None = None
+    team_name: str | None = Field(None, max_length=255)
 
 
 class SwimmerResponse(SwimmerBase):
     """Schema for swimmer response."""
+
     id: int
     age: int  # Calculated field
 
@@ -37,8 +40,10 @@ class SwimmerResponse(SwimmerBase):
 
 # --- Swim Event Schemas ---
 
+
 class SwimEventResponse(BaseModel):
     """Schema for swim event response."""
+
     id: int
     distance: int
     unit: str
@@ -51,21 +56,25 @@ class SwimEventResponse(BaseModel):
 
 # --- Swim Meet Schemas ---
 
+
 class SwimMeetBase(BaseModel):
     """Base swim meet schema."""
+
     name: str = Field(..., min_length=1, max_length=255)
     date: date
-    location: Optional[str] = Field(None, max_length=255)
-    notes: Optional[str] = None
+    location: str | None = Field(None, max_length=255)
+    notes: str | None = None
 
 
 class SwimMeetCreate(SwimMeetBase):
     """Schema for creating a swim meet."""
+
     pass
 
 
 class SwimMeetResponse(SwimMeetBase):
     """Schema for swim meet response."""
+
     id: int
 
     model_config = {"from_attributes": True}
@@ -73,19 +82,23 @@ class SwimMeetResponse(SwimMeetBase):
 
 # --- Swim Time Schemas ---
 
+
 class SwimTimeBase(BaseModel):
     """Base swim time schema."""
+
     event_id: int
-    time_formatted: str = Field(..., pattern=r"^\d{1,2}:\d{2}\.\d{2}$", description="Time in mm:ss.hh format")
+    time_formatted: str = Field(
+        ..., pattern=r"^\d{1,2}:\d{2}\.\d{2}$", description="Time in mm:ss.hh format"
+    )
     recorded_date: date
     pool_type: str = Field(..., pattern=r"^(SCY|SCM|LCM)$")
-    meet_name: Optional[str] = Field(None, max_length=255)  # Will auto-create meet if new
-    notes: Optional[str] = None
+    meet_name: str | None = Field(None, max_length=255)  # Will auto-create meet if new
+    notes: str | None = None
 
 
 class SwimTimeCreate(SwimTimeBase):
     """Schema for creating a swim time."""
-    
+
     @field_validator("time_formatted")
     @classmethod
     def validate_time_format(cls, v: str) -> str:
@@ -93,7 +106,7 @@ class SwimTimeCreate(SwimTimeBase):
         parts = v.split(":")
         if len(parts) != 2:
             raise ValueError("Time must be in mm:ss.hh format")
-        minutes = int(parts[0])
+        int(parts[0])  # Validate minutes is an integer
         seconds = float(parts[1])
         if seconds >= 60:
             raise ValueError("Seconds must be less than 60")
@@ -102,24 +115,26 @@ class SwimTimeCreate(SwimTimeBase):
 
 class SwimTimeUpdate(BaseModel):
     """Schema for updating a swim time."""
-    event_id: Optional[int] = None
-    time_formatted: Optional[str] = Field(None, pattern=r"^\d{1,2}:\d{2}\.\d{2}$")
-    recorded_date: Optional[date] = None
-    pool_type: Optional[str] = Field(None, pattern=r"^(SCY|SCM|LCM)$")
-    notes: Optional[str] = None
+
+    event_id: int | None = None
+    time_formatted: str | None = Field(None, pattern=r"^\d{1,2}:\d{2}\.\d{2}$")
+    recorded_date: date | None = None
+    pool_type: str | None = Field(None, pattern=r"^(SCY|SCM|LCM)$")
+    notes: str | None = None
 
 
 class SwimTimeResponse(BaseModel):
     """Schema for swim time response."""
+
     id: int
     swimmer_id: int
     event_id: int
-    meet_id: Optional[int]
+    meet_id: int | None
     time_seconds: float
     time_formatted: str
     recorded_date: date
     pool_type: str
-    notes: Optional[str]
+    notes: str | None
     is_pr: bool
     event: SwimEventResponse
 
@@ -128,8 +143,10 @@ class SwimTimeResponse(BaseModel):
 
 # --- Report Schemas ---
 
+
 class PRDashboardRow(BaseModel):
     """Schema for PR dashboard row."""
+
     event_id: int
     event_name: str
     pool_type: str
@@ -145,14 +162,16 @@ class PRDashboardRow(BaseModel):
 
 class EventProgressionPoint(BaseModel):
     """Single data point for event progression chart."""
+
     date: date
     time_seconds: float
     time_formatted: str
     is_pr: bool
-    meet_name: Optional[str]
+    meet_name: str | None
 
 
 class EventProgressionResponse(BaseModel):
     """Response for event progression chart."""
+
     event: SwimEventResponse
     times: list[EventProgressionPoint]

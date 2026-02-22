@@ -1,6 +1,6 @@
 """Trade Tracker API - Security utilities for JWT and password hashing."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from jose import JWTError, jwt
@@ -24,33 +24,33 @@ def get_password_hash(password: str) -> str:
 
 def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = None) -> str:
     """Create a JWT access token.
-    
+
     Args:
         data: Claims to encode in the token
         expires_delta: Optional custom expiration time
-        
+
     Returns:
         Encoded JWT string
     """
     to_encode = data.copy()
-    
+
     if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = datetime.now(UTC) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
-    
+        expire = datetime.now(UTC) + timedelta(minutes=settings.access_token_expire_minutes)
+
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
-    
+
     return encoded_jwt
 
 
 def decode_access_token(token: str) -> dict[str, Any] | None:
     """Decode and validate a JWT access token.
-    
+
     Args:
         token: The JWT token string
-        
+
     Returns:
         Decoded token payload or None if invalid
     """

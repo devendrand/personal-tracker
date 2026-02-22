@@ -2,7 +2,7 @@
 
 from datetime import timedelta
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter
 from pydantic import BaseModel
 
 from app.core.config import settings
@@ -13,14 +13,14 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 class Token(BaseModel):
     """Token response schema."""
-    
+
     access_token: str
     token_type: str = "bearer"
 
 
 class TokenRequest(BaseModel):
     """Token request schema (stub - no real auth yet)."""
-    
+
     username: str
     password: str
 
@@ -28,7 +28,7 @@ class TokenRequest(BaseModel):
 @router.post("/token", response_model=Token)
 async def login_for_access_token(request: TokenRequest) -> Token:
     """Get an access token.
-    
+
     STUB: Currently returns a dev token for any credentials.
     Real authentication will be implemented in a future milestone.
     """
@@ -44,7 +44,7 @@ async def login_for_access_token(request: TokenRequest) -> Token:
 @router.get("/dev-token", response_model=Token)
 async def get_dev_token() -> Token:
     """Get a development token for testing.
-    
+
     WARNING: Remove this endpoint in production!
     """
     return Token(access_token=DEV_TOKEN)

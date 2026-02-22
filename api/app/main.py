@@ -8,10 +8,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.routers import (
     auth_router,
-    portfolios_router,
-    transactions_router,
-    swim_router,
     networth_router,
+    portfolios_router,
+    swim_router,
+    transactions_router,
 )
 
 
