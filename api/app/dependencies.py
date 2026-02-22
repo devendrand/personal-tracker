@@ -1,5 +1,6 @@
 """Trade Tracker API - Shared dependencies."""
 
+from collections.abc import AsyncGenerator
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
@@ -42,7 +43,7 @@ async def get_current_user(
     return payload
 
 
-async def get_db() -> AsyncSession:
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """Dependency alias for database session.
 
     This is a convenience wrapper around get_async_session.
