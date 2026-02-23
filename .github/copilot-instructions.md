@@ -133,13 +133,14 @@ cd web && ng serve
 
 **IMPORTANT: Follow these practices for all implementations:**
 
-1. **Plan First**: Always document the implementation plan in `docs/plan/` before writing code
+1. **Create a Feature Branch**: Always create a `feature/<feature_name>` branch for each new implementation.
+2. **Plan First**: Always document the implementation plan in `docs/plan/` before writing code
    - Create a markdown file describing the approach
    - List steps, decisions, and verification criteria
 
-2. **Test-Driven Development (TDD)**: Always write tests before implementation
+3. **Test-Driven Development (TDD)**: Always write tests before implementation
    - Write failing tests that define expected behavior
    - Implement code to make tests pass
    - Refactor while keeping tests green
 
-3. **Incremental Commits**: Make small, focused commits with clear messages
+4. **Incremental Commits**: Make small, focused commits with clear messages
