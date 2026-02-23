@@ -1,8 +1,6 @@
 import { Injectable } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { ApiService } from './api.service';
 
 type TokenResponse = {
   access_token: string;
@@ -13,8 +11,6 @@ type TokenResponse = {
   providedIn: 'root',
 })
 export class DevTokenBootstrapService {
-  constructor(private readonly api: ApiService) {}
-
   async ensureDevToken(): Promise<void> {
     if (environment.production) {
       return;
@@ -25,13 +21,35 @@ export class DevTokenBootstrapService {
       return;
     }
 
-    try {
-      const token = await firstValueFrom(this.api.get<TokenResponse>('/auth/dev-token'));
-      if (token?.access_token) {
-        localStorage.setItem('access_token', token.access_token);
+    const candidates = Array.from(
+      new Set(
+        [
+          `${environment.apiUrl.replace(/\/$/, '')}/auth/dev-token`,
+          '/api/auth/dev-token',
+          'http://localhost:8000/api/auth/dev-token',
+        ].filter(Boolean),
+      ),
+    );
+
+    for (const url of candidates) {
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 2000);
+        const resp = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeout);
+
+        if (!resp.ok) {
+          continue;
+        }
+
+        const token = (await resp.json()) as TokenResponse;
+        if (token?.access_token) {
+          localStorage.setItem('access_token', token.access_token);
+          return;
+        }
+      } catch {
+        // Ignore and fall through to next candidate
       }
-    } catch {
-      // Ignore: dev token bootstrap is best-effort.
     }
   }
 }
