@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import hashlib
-from datetime import UTC, datetime
+from datetime import datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -49,8 +49,8 @@ async def import_rows(
         failed=0,
         duplicates=0,
         errors=skipped_rows,
-        created_at=datetime.now(UTC),
-        updated_at=datetime.now(UTC),
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
     )
     session.add(batch)
     await session.flush()
@@ -84,8 +84,8 @@ async def import_rows(
             raw=row.raw,
             portfolio_id=None,
             dedupe_key=dedupe,
-            created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC),
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
         )
         session.add(txn)
         batch.imported += 1

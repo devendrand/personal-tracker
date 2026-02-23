@@ -6,8 +6,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from uuid import uuid4
 
-from sqlalchemy import Date, DateTime, ForeignKey, Index, Numeric, String, Text
-from sqlalchemy.dialects.sqlite import JSON as SQLiteJSON
+from sqlalchemy import JSON, Date, DateTime, ForeignKey, Index, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models import Base
@@ -47,7 +46,7 @@ class ImportBatch(Base):
     duplicates: Mapped[int] = mapped_column(nullable=False, default=0)
 
     # Raw errors/skips for troubleshooting; stored as JSON-compatible structure.
-    errors: Mapped[list[dict]] = mapped_column(SQLiteJSON, nullable=False, default=list)
+    errors: Mapped[list[dict]] = mapped_column(JSON, nullable=False, default=list)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
@@ -88,7 +87,7 @@ class Transaction(Base):
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Raw row storage for traceability.
-    raw: Mapped[dict] = mapped_column(SQLiteJSON, nullable=False)
+    raw: Mapped[dict] = mapped_column(JSON, nullable=False)
 
     # Portfolio tagging (unassigned is NULL)
     portfolio_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("portfolio.id"), nullable=True)
