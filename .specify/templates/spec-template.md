@@ -1,6 +1,6 @@
 # Feature Specification: [FEATURE NAME]
 
-**Feature Branch**: `[###-feature-name]`  
+**Feature Branch**: `feature/<feature_name>`  
 **Created**: [DATE]  
 **Status**: Draft  
 **Input**: User description: "$ARGUMENTS"
@@ -74,6 +74,8 @@
 
 - What happens when [boundary condition]?
 - How does system handle [error scenario]?
+
+**Test Coverage Requirement**: Every edge case listed here MUST be covered by automated tests (unit/integration as appropriate).
 
 ## Requirements *(mandatory)*
 
