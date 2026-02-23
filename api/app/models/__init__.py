@@ -14,9 +14,14 @@ class Base(DeclarativeBase):
 # ruff: noqa: E402
 from app.models.networth import NWAccount, NWSnapshot, NWSnapshotBalance
 from app.models.swim import SwimEvent, SwimMeet, Swimmer, SwimTime
+from app.models.trade import ImportBatch, Portfolio, Transaction
 
 __all__ = [
     "Base",
+    # Trade
+    "Transaction",
+    "Portfolio",
+    "ImportBatch",
     "Swimmer",
     "SwimEvent",
     "SwimMeet",
