@@ -12,3 +12,6 @@ Dockerfile
 *.egg-info
 dist
 build
+.env*
+!.env.example
+coverage

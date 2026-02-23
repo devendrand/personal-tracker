@@ -2,6 +2,9 @@ node_modules
 dist
 .angular
 npm-debug.log*
+.env*
+!.env.example
+coverage
 .git
 .gitignore
 README.md
