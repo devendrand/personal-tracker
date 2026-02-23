@@ -128,3 +128,18 @@ cd web && ng serve
 - Backend: pytest with httpx for async API tests
 - Use fixtures for database setup/teardown
 - Test files in `tests/` directory mirroring app structure
+
+## Development Workflow
+
+**IMPORTANT: Follow these practices for all implementations:**
+
+1. **Plan First**: Always document the implementation plan in `docs/plan/` before writing code
+   - Create a markdown file describing the approach
+   - List steps, decisions, and verification criteria
+
+2. **Test-Driven Development (TDD)**: Always write tests before implementation
+   - Write failing tests that define expected behavior
+   - Implement code to make tests pass
+   - Refactor while keeping tests green
+
+3. **Incremental Commits**: Make small, focused commits with clear messages
