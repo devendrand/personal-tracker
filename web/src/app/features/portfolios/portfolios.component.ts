@@ -4,7 +4,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatChipsModule } from '@angular/material/chips';
 import { ApiService } from '../../core/services/api.service';
 import { Portfolio } from '../../shared/models/portfolio.model';
 
@@ -16,8 +15,7 @@ import { Portfolio } from '../../shared/models/portfolio.model';
     MatCardModule,
     MatButtonModule,
     MatIconModule,
-    MatProgressSpinnerModule,
-    MatChipsModule
+    MatProgressSpinnerModule
   ],
   template: `
     <div class="portfolios-container">
@@ -52,14 +50,9 @@ import { Portfolio } from '../../shared/models/portfolio.model';
             <mat-card class="portfolio-card">
               <mat-card-header>
                 <mat-card-title>{{ portfolio.name }}</mat-card-title>
-                <mat-card-subtitle>
-                  <mat-chip-set>
-                    <mat-chip>{{ portfolio.type }}</mat-chip>
-                  </mat-chip-set>
-                </mat-card-subtitle>
               </mat-card-header>
               <mat-card-content>
-                <p>{{ portfolio.description || 'No description' }}</p>
+                <p>Created {{ portfolio.created_at | date:'mediumDate' }}</p>
               </mat-card-content>
               <mat-card-actions>
                 <button mat-button color="primary">View Details</button>
@@ -142,11 +135,7 @@ import { Portfolio } from '../../shared/models/portfolio.model';
       gap: 16px;
     }
 
-    .portfolio-card {
-      mat-card-subtitle {
-        margin-top: 8px;
-      }
-    }
+    .portfolio-card {}
   `]
 })
 export class PortfoliosComponent implements OnInit {

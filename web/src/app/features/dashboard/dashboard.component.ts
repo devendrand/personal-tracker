@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-dashboard',
@@ -67,7 +68,7 @@ import { MatButtonModule } from '@angular/material/button';
           <p>Upload your E*TRADE transaction CSV to get started with tracking your trades.</p>
         </mat-card-content>
         <mat-card-actions>
-          <button mat-raised-button color="primary">
+          <button mat-raised-button color="primary" (click)="goToTransactions()">
             <mat-icon>upload_file</mat-icon>
             Upload Transactions
           </button>
@@ -142,4 +143,10 @@ import { MatButtonModule } from '@angular/material/button';
     }
   `]
 })
-export class DashboardComponent {}
+export class DashboardComponent {
+  private readonly router = inject(Router);
+
+  goToTransactions(): void {
+    this.router.navigate(['/transactions']);
+  }
+}

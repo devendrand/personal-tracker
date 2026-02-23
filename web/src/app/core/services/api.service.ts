@@ -3,6 +3,9 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
+import { Portfolio } from '../../shared/models/portfolio.model';
+import { Transaction, TransactionUploadResponse } from '../../shared/models/transaction.model';
+
 /**
  * Base API service for making HTTP requests to the backend.
  * 
@@ -57,5 +60,30 @@ export class ApiService {
     const formData = new FormData();
     formData.append('file', file);
     return this.http.post<T>(`${this.baseUrl}${endpoint}`, formData);
+  }
+
+  getTransactions(params?: { assigned?: boolean }): Observable<Transaction[]> {
+    const search = new URLSearchParams();
+    if (params?.assigned !== undefined) {
+      search.set('assigned', String(params.assigned));
+    }
+    const suffix = search.toString() ? `?${search.toString()}` : '';
+    return this.get<Transaction[]>(`/transactions${suffix}`);
+  }
+
+  uploadTransactionsCsv(file: File): Observable<TransactionUploadResponse> {
+    return this.upload<TransactionUploadResponse>('/transactions/upload', file);
+  }
+
+  getPortfolios(): Observable<Portfolio[]> {
+    return this.get<Portfolio[]>('/portfolios');
+  }
+
+  createPortfolio(name: string): Observable<Portfolio> {
+    return this.post<Portfolio>('/portfolios', { name });
+  }
+
+  tagTransaction(transactionId: string, portfolioId: string): Observable<Transaction> {
+    return this.post<Transaction>(`/transactions/${transactionId}/tag`, { portfolio_id: portfolioId });
   }
 }
