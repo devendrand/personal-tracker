@@ -1,18 +1,18 @@
-import { Injectable } from '@angular/core';
+import { Injectable, isDevMode } from '@angular/core';
 
 import { environment } from '../../../environments/environment';
 
-type TokenResponse = {
+interface TokenResponse {
   access_token: string;
   token_type?: string;
-};
+}
 
 @Injectable({
   providedIn: 'root',
 })
 export class DevTokenBootstrapService {
   async ensureDevToken(): Promise<void> {
-    if (environment.production) {
+    if (environment.production || !isDevMode()) {
       return;
     }
 
