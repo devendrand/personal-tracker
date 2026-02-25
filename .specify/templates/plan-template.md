@@ -33,6 +33,9 @@
 
 [Gates determined based on constitution file]
 
+At minimum, include a gate confirming the plan defines the CI-equivalent checks
+that MUST be run before pushing.
+
 ## Project Structure
 
 ### Documentation (this feature)

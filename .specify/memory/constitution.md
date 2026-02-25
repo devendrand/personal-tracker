@@ -1,19 +1,16 @@
 <!--
 Sync Impact Report:
-- Version change: 1.1.0 → 1.2.0
+- Version change: 1.2.0 → 1.3.0
 - Modified principles:
-	- II: Plan-First Development → Spec-Driven Workflow Order
-	- III: Test-Driven Development (TDD) (clarified to require edge-case coverage)
-	- VIII: Structured Version Control (clarified to require branch cut from latest main)
-- Added sections: None
+	- VIII: Structured Version Control (clarified to require CI-equivalent checks before push)
+- Added sections:
+	- IX. CI-Equivalent Checks Before Push
 - Removed sections: None
-- Templates/scripts requiring updates:
-	- ✅ .specify/templates/spec-template.md
+- Templates requiring updates:
 	- ✅ .specify/templates/plan-template.md
 	- ✅ .specify/templates/tasks-template.md
-	- ✅ .specify/scripts/bash/create-new-feature.sh
-	- ✅ .specify/scripts/bash/common.sh
 	- ✅ .github/copilot-instructions.md
+	- ✅ README.md
 - Follow-up TODOs:
 	- None
 -->
@@ -67,10 +64,33 @@ All work MUST be done on a `feature/<feature_name>` branch cut from the latest `
 - Update `main` from the remote (`fetch` + `pull --ff-only`) BEFORE creating the feature branch.
 - Do not commit directly to `main`.
 - Commit in small, focused increments with clear, descriptive messages.
+- Before pushing, follow Principle IX (CI-equivalent checks).
+
+### IX. CI-Equivalent Checks Before Push
+After completing implementation work (and always before pushing to the remote), developers MUST run the CI-equivalent checks locally and fix any failures.
+
+For this repository, “CI-equivalent” means matching the GitHub Actions CI workflow:
+
+- **Backend (`api/`)**:
+
+	- `cd api && uv run ruff check .`
+	- `cd api && uv run ruff format --check .`
+	- `cd api && uv run mypy app --ignore-missing-imports`
+	- `cd api && uv run pytest`
+
+- **Frontend (`web/`)**:
+
+	- `cd web && npm ci`
+	- `cd web && npm run lint`
+	- `cd web && npm run build -- --configuration=production`
+
+If the host environment does not have Node installed, use Docker for the frontend checks:
+
+- `docker compose run --rm --no-deps web sh -lc "npm ci && npm run lint && npm run build -- --configuration=production"`
 
 ## Governance
 
 This constitution is the primary source of truth for development practices. Amendments require a documented proposal, review, and an approved migration plan. All pull requests must be reviewed for compliance with these principles.
 
-**Version**: 1.2.0 | **Ratified**: 2026-02-22 | **Last Amended**: 2026-02-22
+**Version**: 1.3.0 | **Ratified**: 2026-02-22 | **Last Amended**: 2026-02-25
 
