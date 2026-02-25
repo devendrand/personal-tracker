@@ -4,6 +4,7 @@ set -e
 
 JSON_MODE=false
 SHORT_NAME=""
+FEATURE_NUMBER=""
 ARGS=()
 i=1
 while [ $i -le $# ]; do
@@ -11,6 +12,23 @@ while [ $i -le $# ]; do
     case "$arg" in
         --json) 
             JSON_MODE=true 
+            ;;
+        --number)
+            if [ $((i + 1)) -gt $# ]; then
+                echo 'Error: --number requires a value' >&2
+                exit 1
+            fi
+            i=$((i + 1))
+            next_arg="${!i}"
+            if [[ "$next_arg" == --* ]]; then
+                echo 'Error: --number requires a value' >&2
+                exit 1
+            fi
+            if ! [[ "$next_arg" =~ ^[0-9]+$ ]] || [[ "$next_arg" -lt 1 ]]; then
+                echo 'Error: --number must be a positive integer' >&2
+                exit 1
+            fi
+            FEATURE_NUMBER="$next_arg"
             ;;
         --short-name)
             if [ $((i + 1)) -gt $# ]; then
@@ -31,11 +49,13 @@ while [ $i -le $# ]; do
             echo ""
             echo "Options:"
             echo "  --json              Output in JSON format"
+            echo "  --number N          Optional: Force the numeric spec directory id (e.g., 3 -> specs/003-<short-name>/)"
             echo "  --short-name <name> Provide a custom short name (2-4 words) for the branch"
             echo "  --help, -h          Show this help message"
             echo ""
             echo "Examples:"
-            echo "  $0 'Add user authentication system' --short-name 'user-auth'"
+            echo "  $0 --json --short-name 'user-auth' 'Add user authentication system'"
+            echo "  $0 --number 5 --short-name 'user-auth' 'Add user authentication system'"
             exit 0
             ;;
         *) 
@@ -111,6 +131,26 @@ cd "$REPO_ROOT"
 
 SPECS_DIR="$REPO_ROOT/specs"
 mkdir -p "$SPECS_DIR"
+
+# Determine the next available numeric id for specs/<id>-<short-name>/.
+next_feature_number() {
+    local specs_dir="$1"
+    local max=0
+    local d
+    shopt -s nullglob
+    for d in "$specs_dir"/[0-9][0-9][0-9]-*; do
+        [[ -d "$d" ]] || continue
+        local base
+        base="$(basename "$d")"
+        local n
+        n="${base%%-*}"
+        if [[ "$n" =~ ^[0-9]+$ ]] && [[ "$n" -gt "$max" ]]; then
+            max="$n"
+        fi
+    done
+    shopt -u nullglob
+    echo $((max + 1))
+}
 
 # Function to generate branch name with stop word filtering and length filtering
 generate_branch_name() {
@@ -199,7 +239,19 @@ else
     >&2 echo "[specify] Warning: Git repository not detected; skipped branch creation for $BRANCH_NAME"
 fi
 
-FEATURE_DIR="$SPECS_DIR/$BRANCH_NAME"
+if [[ -z "$FEATURE_NUMBER" ]]; then
+    FEATURE_NUMBER="$(next_feature_number "$SPECS_DIR")"
+fi
+
+FEATURE_ID=$(printf "%03d" "$FEATURE_NUMBER")
+FEATURE_DIR_NAME="${FEATURE_ID}-${BRANCH_SUFFIX}"
+FEATURE_DIR="$SPECS_DIR/$FEATURE_DIR_NAME"
+
+if [[ -d "$FEATURE_DIR" ]]; then
+    echo "Error: Spec directory already exists: $FEATURE_DIR" >&2
+    echo "Hint: omit --number to auto-assign the next id, or choose a different --number." >&2
+    exit 1
+fi
 mkdir -p "$FEATURE_DIR"
 
 TEMPLATE="$REPO_ROOT/.specify/templates/spec-template.md"
