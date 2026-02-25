@@ -147,3 +147,8 @@ cd web && ng serve
    - Refactor while keeping tests green
 
 6. **Incremental Commits**: Make small, focused commits with clear messages
+
+7. **CI-Equivalent Checks Before Push**: Always run CI-equivalent checks after implementation and before `git push`
+  - Backend: `cd api && uv run ruff check . && uv run ruff format --check . && uv run mypy app --ignore-missing-imports && uv run pytest`
+  - Frontend (host Node): `cd web && npm ci && npm run lint && npm run build -- --configuration=production`
+  - Frontend (Docker): `docker compose run --rm --no-deps web sh -lc "npm ci && npm run lint && npm run build -- --configuration=production"`

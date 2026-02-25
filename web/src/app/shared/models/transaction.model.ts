@@ -1,32 +1,26 @@
 /**
- * Transaction model interfaces
+ * Transaction model interfaces (aligned with backend API).
  */
 
-export type TransactionType = 
-  | 'EQUITY_BUY'
-  | 'EQUITY_SELL'
-  | 'OPTION_BUY'
-  | 'OPTION_SELL'
-  | 'ASSIGNMENT'
-  | 'EXPIRATION'
-  | 'EXERCISE'
-  | 'DIVIDEND';
-
 export interface Transaction {
-  id: number;
-  date: string;
-  ticker: string;
-  action: TransactionType;
-  quantity: number;
-  price: number;
-  fees: number;
-  rawData?: Record<string, unknown>;
-  createdAt: string;
-  portfolioIds?: number[];
+  id: string;
+  activity_date: string;
+  activity_type: string;
+  description: string;
+
+  symbol?: string | null;
+  quantity?: number | null;
+  price?: number | null;
+  amount?: number | null;
+
+  portfolio_id?: string | null;
+  created_at: string;
 }
 
 export interface TransactionUploadResponse {
-  preview: Transaction[];
+  imported: number;
+  skipped: number;
+  failed: number;
   duplicates: number;
-  newRecords: number;
+  unassigned: number;
 }

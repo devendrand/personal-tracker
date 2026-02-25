@@ -2,6 +2,8 @@
 .env
 .env.local
 .env.*.local
+.env.*
+!.env.example
 
 # Python
 __pycache__/
@@ -37,6 +39,7 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+coverage/
 
 # Angular
 .angular/
@@ -52,6 +55,8 @@ out-tsc/
 *.swo
 *~
 .DS_Store
+Thumbs.db
+*.tmp
 
 # Docker
 docker-compose.override.yml

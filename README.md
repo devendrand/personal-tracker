@@ -61,6 +61,30 @@ npm install
 ng serve
 ```
 
+### CI-equivalent checks (required before push)
+
+Run everything (recommended):
+
+```bash
+./scripts/ci_local.sh
+```
+
+Backend:
+
+```bash
+cd api
+uv run ruff check .
+uv run ruff format --check .
+uv run mypy app --ignore-missing-imports
+uv run pytest
+```
+
+Frontend (Docker, no host Node required):
+
+```bash
+docker compose run --rm --no-deps web sh -lc "npm ci && npm run lint && npm run build -- --configuration=production"
+```
+
 ### Database Migrations
 
 ```bash

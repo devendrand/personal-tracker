@@ -4,7 +4,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatChipsModule } from '@angular/material/chips';
 import { ApiService } from '../../core/services/api.service';
 import { Portfolio } from '../../shared/models/portfolio.model';
 
@@ -16,17 +15,12 @@ import { Portfolio } from '../../shared/models/portfolio.model';
     MatCardModule,
     MatButtonModule,
     MatIconModule,
-    MatProgressSpinnerModule,
-    MatChipsModule
+    MatProgressSpinnerModule
   ],
   template: `
     <div class="portfolios-container">
       <div class="header">
         <h1>Portfolios</h1>
-        <button mat-raised-button color="primary">
-          <mat-icon>add</mat-icon>
-          New Portfolio
-        </button>
       </div>
 
       @if (loading) {
@@ -38,12 +32,8 @@ import { Portfolio } from '../../shared/models/portfolio.model';
         <mat-card class="empty-state">
           <mat-card-content>
             <mat-icon>folder_open</mat-icon>
-            <h3>No portfolios yet</h3>
-            <p>Create a portfolio to start organizing your trades by strategy.</p>
-            <button mat-raised-button color="primary">
-              <mat-icon>add</mat-icon>
-              Create First Portfolio
-            </button>
+            <h3>No portfolios available</h3>
+            <p>There are no portfolios to display.</p>
           </mat-card-content>
         </mat-card>
       } @else {
@@ -52,14 +42,9 @@ import { Portfolio } from '../../shared/models/portfolio.model';
             <mat-card class="portfolio-card">
               <mat-card-header>
                 <mat-card-title>{{ portfolio.name }}</mat-card-title>
-                <mat-card-subtitle>
-                  <mat-chip-set>
-                    <mat-chip>{{ portfolio.type }}</mat-chip>
-                  </mat-chip-set>
-                </mat-card-subtitle>
               </mat-card-header>
               <mat-card-content>
-                <p>{{ portfolio.description || 'No description' }}</p>
+                <p>Created {{ portfolio.created_at | date:'mediumDate' }}</p>
               </mat-card-content>
               <mat-card-actions>
                 <button mat-button color="primary">View Details</button>
@@ -142,11 +127,7 @@ import { Portfolio } from '../../shared/models/portfolio.model';
       gap: 16px;
     }
 
-    .portfolio-card {
-      mat-card-subtitle {
-        margin-top: 8px;
-      }
-    }
+    .portfolio-card {}
   `]
 })
 export class PortfoliosComponent implements OnInit {

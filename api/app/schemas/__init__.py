@@ -1,11 +1,5 @@
 """Personal Tracker API - Pydantic schemas for request/response validation."""
 
-# Trade Tracker schemas (stub)
-# from app.schemas.transaction import TransactionCreate, TransactionResponse
-# from app.schemas.portfolio import PortfolioCreate, PortfolioResponse
-
-# Swim Performance Tracker schemas
-# Net Worth Tracker schemas
 from app.schemas.networth import (
     CategoryBreakdown,
     NetWorthSummary,
@@ -33,8 +27,21 @@ from app.schemas.swim import (
     SwimTimeResponse,
     SwimTimeUpdate,
 )
+from app.schemas.trade import (
+    ImportSummary,
+    PortfolioResponse,
+    TransactionResponse,
+    TransactionTagRequest,
+    UploadResponse,
+)
 
 __all__ = [
+    # Trade
+    "ImportSummary",
+    "UploadResponse",
+    "TransactionResponse",
+    "PortfolioResponse",
+    "TransactionTagRequest",
     # Swim
     "SwimmerCreate",
     "SwimmerUpdate",
