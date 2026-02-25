@@ -44,7 +44,14 @@ Given that feature description, do this:
       git fetch --all --prune
       ```
 
-   b. Run the script once to create the branch and initialize the spec:
+   b. Ensure you are starting from an up-to-date `main` before branching:
+
+      ```bash
+      git checkout main
+      git pull --ff-only
+      ```
+
+   c. Run the script once to create the branch and initialize the spec:
 
       ```bash
       .specify/scripts/bash/create-new-feature.sh --json --short-name "<short-name>" "$ARGUMENTS"

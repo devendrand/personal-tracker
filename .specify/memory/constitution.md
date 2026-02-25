@@ -1,16 +1,12 @@
 <!--
 Sync Impact Report:
-- Version change: 1.2.0 → 1.3.0
+- Version change: 1.3.1 → 1.3.2
 - Modified principles:
-	- VIII: Structured Version Control (clarified to require CI-equivalent checks before push)
-- Added sections:
-	- IX. CI-Equivalent Checks Before Push
+	- IX: CI-Equivalent Checks Before Push (clarified to sync with updated main immediately before running CI checks)
+- Added sections: None
 - Removed sections: None
 - Templates requiring updates:
-	- ✅ .specify/templates/plan-template.md
-	- ✅ .specify/templates/tasks-template.md
 	- ✅ .github/copilot-instructions.md
-	- ✅ README.md
 - Follow-up TODOs:
 	- None
 -->
@@ -61,13 +57,30 @@ The application is designed to be developed and deployed using containers. All s
 ### VIII. Structured Version Control
 All work MUST be done on a `feature/<feature_name>` branch cut from the latest `main`:
 
-- Update `main` from the remote (`fetch` + `pull --ff-only`) BEFORE creating the feature branch.
+- For every feature, you MUST start from `main`, update it, and only then create the feature branch.
+	Minimum required sequence:
+	- `git checkout main`
+	- `git fetch --all --prune`
+	- `git pull --ff-only`
+	- `git checkout -b feature/<feature_name>`
 - Do not commit directly to `main`.
 - Commit in small, focused increments with clear, descriptive messages.
 - Before pushing, follow Principle IX (CI-equivalent checks).
 
 ### IX. CI-Equivalent Checks Before Push
 After completing implementation work (and always before pushing to the remote), developers MUST run the CI-equivalent checks locally and fix any failures.
+
+Immediately before running CI-equivalent checks, you MUST sync your feature branch with the latest `main` to minimize late merge conflicts:
+
+- `git fetch --all --prune`
+- `git checkout main`
+- `git pull --ff-only`
+- `git checkout feature/<feature_name>`
+- Integrate latest `main` into your feature branch (choose one and be consistent):
+	- Merge: `git merge --no-ff origin/main`
+	- Rebase: `git rebase origin/main`
+
+If this introduces changes or conflicts, resolve them and then run CI-equivalent checks.
 
 For this repository, “CI-equivalent” means matching the GitHub Actions CI workflow:
 
@@ -92,5 +105,10 @@ If the host environment does not have Node installed, use Docker for the fronten
 
 This constitution is the primary source of truth for development practices. Amendments require a documented proposal, review, and an approved migration plan. All pull requests must be reviewed for compliance with these principles.
 
-**Version**: 1.3.0 | **Ratified**: 2026-02-22 | **Last Amended**: 2026-02-25
+Versioning follows semantic versioning (MAJOR.MINOR.PATCH):
+- MAJOR: backward-incompatible governance changes (e.g., principle removals/redefinitions)
+- MINOR: new principles/sections or materially expanded guidance
+- PATCH: clarifications, wording, and non-semantic refinements
+
+**Version**: 1.3.2 | **Ratified**: 2026-02-22 | **Last Amended**: 2026-02-25
 

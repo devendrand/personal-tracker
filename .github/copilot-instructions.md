@@ -133,8 +133,8 @@ cd web && ng serve
 
 **IMPORTANT: Follow these practices for all implementations:**
 
-1. **Update `main` First**: Always ensure local `main` is up to date with the remote before branching (fetch + fast-forward pull).
-2. **Create a Feature Branch**: Always create a `feature/<feature_name>` branch from the latest `main` for each implementation.
+1. **Start From `main`**: For every feature, start on `main`, update it (`fetch` + `pull --ff-only`), and only then create the feature branch.
+2. **Create a Feature Branch**: Always create a `feature/<feature_name>` branch from the updated `main` for each implementation.
 3. **Spec → Clarify → Plan → Implement**: Always create a specification, clarify underspecified areas, then plan, then implement.
 4. **Plan First**: Always document the implementation plan in `docs/plan/` before writing code
    - Create a markdown file describing the approach
@@ -148,7 +148,9 @@ cd web && ng serve
 
 6. **Incremental Commits**: Make small, focused commits with clear messages
 
-7. **CI-Equivalent Checks Before Push**: Always run CI-equivalent checks after implementation and before `git push`
+7. **Sync With `main` Before CI**: After finishing feature work and immediately before running CI-equivalent checks, sync your branch with the latest `main` (fetch + fast-forward pull on `main`, then merge or rebase `origin/main` into your feature branch).
+
+8. **CI-Equivalent Checks Before Push**: Always run CI-equivalent checks after implementation and before `git push`
   - Backend: `cd api && uv run ruff check . && uv run ruff format --check . && uv run mypy app --ignore-missing-imports && uv run pytest`
   - Frontend (host Node): `cd web && npm ci && npm run lint && npm run build -- --configuration=production`
   - Frontend (Docker): `docker compose run --rm --no-deps web sh -lc "npm ci && npm run lint && npm run build -- --configuration=production"`
