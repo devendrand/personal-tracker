@@ -1,13 +1,12 @@
 <!--
 Sync Impact Report:
-- Version change: 1.3.0 → 1.3.1
+- Version change: 1.3.1 → 1.3.2
 - Modified principles:
-	- VIII: Structured Version Control (clarified to always start from updated main before branching)
+	- IX: CI-Equivalent Checks Before Push (clarified to sync with updated main immediately before running CI checks)
 - Added sections: None
 - Removed sections: None
 - Templates requiring updates:
 	- ✅ .github/copilot-instructions.md
-	- ✅ .github/agents/speckit.specify.agent.md
 - Follow-up TODOs:
 	- None
 -->
@@ -71,6 +70,18 @@ All work MUST be done on a `feature/<feature_name>` branch cut from the latest `
 ### IX. CI-Equivalent Checks Before Push
 After completing implementation work (and always before pushing to the remote), developers MUST run the CI-equivalent checks locally and fix any failures.
 
+Immediately before running CI-equivalent checks, you MUST sync your feature branch with the latest `main` to minimize late merge conflicts:
+
+- `git fetch --all --prune`
+- `git checkout main`
+- `git pull --ff-only`
+- `git checkout feature/<feature_name>`
+- Integrate latest `main` into your feature branch (choose one and be consistent):
+	- Merge: `git merge --no-ff origin/main`
+	- Rebase: `git rebase origin/main`
+
+If this introduces changes or conflicts, resolve them and then run CI-equivalent checks.
+
 For this repository, “CI-equivalent” means matching the GitHub Actions CI workflow:
 
 - **Backend (`api/`)**:
@@ -99,5 +110,5 @@ Versioning follows semantic versioning (MAJOR.MINOR.PATCH):
 - MINOR: new principles/sections or materially expanded guidance
 - PATCH: clarifications, wording, and non-semantic refinements
 
-**Version**: 1.3.1 | **Ratified**: 2026-02-22 | **Last Amended**: 2026-02-25
+**Version**: 1.3.2 | **Ratified**: 2026-02-22 | **Last Amended**: 2026-02-25
 
