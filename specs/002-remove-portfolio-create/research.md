@@ -30,3 +30,16 @@
 
 **Rationale**:
 - This feature removes creation workflow only; it should not delete existing data or references.
+
+## Decision: Validate the frontend using Docker (no host node/npm required)
+
+**Decision**: Use the existing containerized frontend setup (`web/Dockerfile` + `docker compose`) to run the production build and manual UI verification steps.
+
+**Rationale**:
+- The current environment may not have `node`/`npm`, but the repo already standardizes Node usage via Docker.
+- A `docker build` of the `builder` stage is equivalent to running `npm run build` and will fail if compilation fails.
+- Manual UI validation can be performed against the Compose `web` service on port `4200`.
+
+**Alternatives considered**:
+- Installing Node on the host: rejected as an environment dependency not required by the repo’s container-first workflow.
+- Skipping the frontend build: rejected because it leaves the final validation item incomplete.

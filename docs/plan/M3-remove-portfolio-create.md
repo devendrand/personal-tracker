@@ -24,3 +24,8 @@ Remove the portfolio creation workflow from the application (UI + public API) wh
 - `POST /api/portfolios` returns `405 Method Not Allowed`.
 - `GET /api/portfolios` continues to work.
 - Backend tests pass.
+
+### Frontend validation (when host `node`/`npm` is unavailable)
+
+- Production build (equivalent to `cd web && npm run build`): `docker build -f web/Dockerfile --target builder -t trade-tracker-web:builder web`
+- Manual UI check: `docker compose up --build -d web` then open `http://localhost:4200/portfolios`

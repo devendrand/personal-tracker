@@ -35,8 +35,11 @@ curl -s \
 
 ## Tagging Later (v1)
 
-1. Create a strategy portfolio: `POST /api/portfolios`
-2. Assign a transaction to a portfolio:
+1. Ensure at least one portfolio already exists for your user.
+   - Portfolio creation is not supported in the UI or via the public API (`POST /api/portfolios` returns `405 Method Not Allowed`).
+2. List portfolios and pick a target `portfolio_id`:
+   - `GET /api/portfolios`
+3. Assign a transaction to a portfolio:
    - `POST /api/transactions/{transaction_id}/tag` with JSON `{ "portfolio_id": "..." }`
 
 ## Sample File
