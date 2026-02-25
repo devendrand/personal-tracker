@@ -123,7 +123,7 @@ trade-tracker/
 
 | Layer | Technology |
 |-------|------------|
-| Frontend | Angular 21 + Angular Material |
+| Frontend | Angular 19 + Angular Material |
 | Backend | Python FastAPI |
 | Database | PostgreSQL 17 |
 | Auth | JWT (python-jose) |

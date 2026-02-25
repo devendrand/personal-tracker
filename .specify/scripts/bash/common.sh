@@ -86,6 +86,32 @@ find_feature_dir() {
     local repo_root="$1"
     local branch_name="$2"
     local specs_dir="$repo_root/specs"
+
+    # Preferred convention: specs/<NNN>-<short-name>/, where branch is feature/<short-name>.
+    if [[ "$branch_name" =~ ^feature/ ]]; then
+        local suffix="${branch_name#feature/}"
+        local candidate=""
+        shopt -s nullglob
+        for dir in "$specs_dir"/[0-9][0-9][0-9]-"$suffix"; do
+            [[ -d "$dir" ]] || continue
+            candidate="$dir"
+            break
+        done
+        shopt -u nullglob
+
+        if [[ -n "$candidate" ]]; then
+            echo "$candidate"
+            return 0
+        fi
+    fi
+
+    # Backward compatible fallbacks.
+    if [[ "$branch_name" =~ ^[0-9]{3}- ]]; then
+        echo "$specs_dir/$branch_name"
+        return 0
+    fi
+
+    # Legacy: specs/<branch_name>/ (e.g., specs/feature/<name>/)
     echo "$specs_dir/$branch_name"
 }
 

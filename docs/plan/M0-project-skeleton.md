@@ -7,7 +7,7 @@
 
 ## TL;DR
 
-Bootstrap a monorepo at `trade-tracker/` with three Docker-composed services: `db` (Postgres 17), `api` (FastAPI + uv), and `web` (Angular 21 standalone + Angular Material). The backend gets a Pydantic-settings config, async SQLAlchemy engine, Alembic migrations scaffold, and a JWT stub middleware. The frontend gets a shell with routing, feature folder structure, and an Angular Material theme. No business logic is implemented — this delivers a running, wired-together skeleton that all future milestones build on.
+Bootstrap a monorepo at `trade-tracker/` with three Docker-composed services: `db` (Postgres 17), `api` (FastAPI + uv), and `web` (Angular 19 standalone + Angular Material). The backend gets a Pydantic-settings config, async SQLAlchemy engine, Alembic migrations scaffold, and a JWT stub middleware. The frontend gets a shell with routing, feature folder structure, and an Angular Material theme. No business logic is implemented — this delivers a running, wired-together skeleton that all future milestones build on.
 
 ---
 
@@ -15,7 +15,7 @@ Bootstrap a monorepo at `trade-tracker/` with three Docker-composed services: `d
 
 - **Monorepo** — single repo with `/api` and `/web` folders
 - **Python tooling** — `uv` (pyproject.toml, uv.lock, .python-version)
-- **Angular version** — v21 (active LTS); standalone components, no NgModules
+- **Angular version** — v19; standalone components, no NgModules
 - **Auth scope** — JWT stub only; hardcoded dev token returned; no login UI or user DB table yet
 - **asyncpg** over psycopg2 — consistent with SQLAlchemy async pattern
 - **Migrations inside `api/`** — tightly coupled to SQLAlchemy models; correct for single-service ownership
@@ -129,8 +129,8 @@ trade-tracker/
 | SQLAlchemy | 2.0.x |
 | Alembic | 1.14.x |
 | asyncpg | 0.30.x |
-| Angular CLI / Angular | 21.1.x |
-| Angular Material | 21.x |
+| Angular CLI / Angular | 19.x |
+| Angular Material | 19.x |
 | Node.js | 22 LTS |
 | Postgres Docker image | postgres:17-alpine |
 

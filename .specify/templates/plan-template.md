@@ -1,7 +1,7 @@
 # Implementation Plan: [FEATURE]
 
 **Branch**: `feature/<feature_name>` | **Date**: [DATE] | **Spec**: [link]
-**Input**: Feature specification from `/specs/feature/<feature_name>/spec.md`
+**Input**: Feature specification from `/specs/<feature_id>-<feature_name>/spec.md`
 
 **Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/plan-template.md` for the execution workflow.
 
@@ -41,7 +41,7 @@ that MUST be run before pushing.
 ### Documentation (this feature)
 
 ```text
-specs/feature/<feature_name>/
+specs/<feature_id>-<feature_name>/
 ├── plan.md              # This file (/speckit.plan command output)
 ├── research.md          # Phase 0 output (/speckit.plan command)
 ├── data-model.md        # Phase 1 output (/speckit.plan command)
