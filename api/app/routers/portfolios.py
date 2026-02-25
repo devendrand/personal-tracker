@@ -5,7 +5,7 @@ from sqlalchemy import select
 
 from app.dependencies import CurrentUser, DbSession
 from app.models.trade import Portfolio
-from app.schemas.trade import PortfolioCreate, PortfolioResponse
+from app.schemas.trade import PortfolioResponse
 
 router = APIRouter(prefix="/portfolios", tags=["Portfolios"])
 
@@ -21,24 +21,6 @@ async def list_portfolios(db: DbSession, current_user: CurrentUser) -> list[Port
     return [
         PortfolioResponse(id=p.id, name=p.name, created_at=p.created_at) for p in portfolios
     ]
-
-
-@router.post("", status_code=status.HTTP_201_CREATED)
-async def create_portfolio(
-    payload: PortfolioCreate,
-    db: DbSession,
-    current_user: CurrentUser,
-) -> PortfolioResponse:
-    user_sub = str(current_user.get("sub") or "")
-    if not user_sub:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user")
-
-    portfolio = Portfolio(user_sub=user_sub, name=payload.name)
-    db.add(portfolio)
-    await db.flush()
-
-    # Explicit 201 status per conventions.
-    return PortfolioResponse(id=portfolio.id, name=portfolio.name, created_at=portfolio.created_at)
 
 
 @router.get("/{portfolio_id}")

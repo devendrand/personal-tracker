@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncGenerator
-from typing import Any
+from typing import Any, Awaitable, Callable
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 from app.dependencies import get_db
 from app.main import app
 from app.models import Base
+from app.models.trade import Portfolio
 
 
 @pytest.fixture
@@ -27,11 +28,37 @@ async def db_engine(tmp_path: Any) -> AsyncGenerator[AsyncEngine, None]:
 
 
 @pytest.fixture
-async def client(db_engine: AsyncEngine) -> AsyncGenerator[AsyncClient, None]:
-    session_maker = async_sessionmaker(db_engine, class_=AsyncSession, expire_on_commit=False)
+def db_session_maker(db_engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
+    return async_sessionmaker(db_engine, class_=AsyncSession, expire_on_commit=False)
+
+
+@pytest.fixture
+async def db_session(db_session_maker: async_sessionmaker[AsyncSession]) -> AsyncGenerator[AsyncSession, None]:
+    async with db_session_maker() as session:
+        try:
+            yield session
+        except Exception:
+            await session.rollback()
+            raise
+
+
+@pytest.fixture
+def create_portfolio(db_session: AsyncSession) -> Callable[[str, str], Awaitable[Portfolio]]:
+    async def _create_portfolio(user_sub: str, name: str = "Test Portfolio") -> Portfolio:
+        portfolio = Portfolio(user_sub=user_sub, name=name)
+        db_session.add(portfolio)
+        await db_session.commit()
+        await db_session.refresh(portfolio)
+        return portfolio
+
+    return _create_portfolio
+
+
+@pytest.fixture
+async def client(db_session_maker: async_sessionmaker[AsyncSession]) -> AsyncGenerator[AsyncClient, None]:
 
     async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
-        async with session_maker() as session:
+        async with db_session_maker() as session:
             try:
                 yield session
                 await session.commit()

@@ -12,37 +12,33 @@ SAMPLE_CSV = """Activity/Trade Date,Transaction Date,Settlement Date,Activity Ty
 """
 
 
-async def test_create_and_list_portfolios_scoped_to_user(client):
-    create = await client.post(
+async def test_post_portfolios_returns_405(client):
+    post = await client.post(
         "/api/portfolios",
         headers=_auth_headers(DEV_TOKEN),
         json={"name": "Strategy A"},
     )
-    assert create.status_code == 201
-    created = create.json()
-    assert created["name"] == "Strategy A"
+    assert post.status_code == 405
 
-    # Same user sees it
+
+async def test_list_portfolios_scoped_to_user(client, create_portfolio):
+    mine_portfolio = await create_portfolio("dev_user", name="Strategy A")
+    await create_portfolio("other_user", name="Other Strategy")
+
     mine = await client.get("/api/portfolios", headers=_auth_headers(DEV_TOKEN))
     assert mine.status_code == 200
-    assert any(p["id"] == created["id"] for p in mine.json())
+    mine_ids = {p["id"] for p in mine.json()}
+    assert mine_portfolio.id in mine_ids
 
-    # Other user does not
     other_token = create_access_token({"sub": "other_user"})
     other = await client.get("/api/portfolios", headers=_auth_headers(other_token))
     assert other.status_code == 200
-    assert other.json() == []
+    assert all(p["id"] != mine_portfolio.id for p in other.json())
 
 
-async def test_tag_transaction_to_portfolio(client):
-    # Create a portfolio
-    create_portfolio = await client.post(
-        "/api/portfolios",
-        headers=_auth_headers(DEV_TOKEN),
-        json={"name": "Strategy A"},
-    )
-    assert create_portfolio.status_code == 201
-    portfolio_id = create_portfolio.json()["id"]
+async def test_tag_transaction_to_portfolio(client, create_portfolio):
+    portfolio = await create_portfolio("dev_user", name="Strategy A")
+    portfolio_id = portfolio.id
 
     # Import one transaction
     upload = await client.post(

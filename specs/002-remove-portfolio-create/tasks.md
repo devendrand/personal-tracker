@@ -18,17 +18,17 @@ description: "Task list for removing portfolio creation (UI + public API)"
 
 ## Phase 1: Setup (Shared)
 
-- [ ] T001 Confirm acceptance scenarios + clarifications are reflected in `specs/002-remove-portfolio-create/spec.md`
-- [ ] T002 Run backend baseline tests (`cd api && uv run pytest`) and note any pre-existing failures in `api/tests/`
-- [ ] T003 Run frontend baseline build (`cd web && npm run build`) and note any pre-existing failures in `web/`
+- [x] T001 Confirm acceptance scenarios + clarifications are reflected in `specs/002-remove-portfolio-create/spec.md`
+- [x] T002 Run backend baseline tests (`cd api && uv run pytest`) and note any pre-existing failures in `api/tests/`
+- [ ] T003 Run frontend baseline build (`cd web && npm run build`) and note any pre-existing failures in `web/` (blocked: `node`/`npm` not installed in current environment)
 
 ---
 
 ## Phase 2: Foundational (Blocking Prerequisites)
 
-- [ ] T004 Add an async SQLAlchemy session fixture in `api/tests/conftest.py` (e.g., `db_session`) for seeding records directly
-- [ ] T005 Add a small test helper/fixture in `api/tests/conftest.py` to create a `Portfolio` for a given `user_sub` (returns created model/id)
-- [ ] T006 Ensure the new test fixtures are used with explicit `commit()` so the API client (separate session) can read seeded rows (update `api/tests/conftest.py`)
+- [x] T004 Add an async SQLAlchemy session fixture in `api/tests/conftest.py` (e.g., `db_session`) for seeding records directly
+- [x] T005 Add a small test helper/fixture in `api/tests/conftest.py` to create a `Portfolio` for a given `user_sub` (returns created model/id)
+- [x] T006 Ensure the new test fixtures are used with explicit `commit()` so the API client (separate session) can read seeded rows (update `api/tests/conftest.py`)
 
 **Checkpoint**: Tests can seed portfolios without `POST /api/portfolios`.
 
@@ -44,10 +44,10 @@ description: "Task list for removing portfolio creation (UI + public API)"
 
 ### Implementation
 
-- [ ] T007 [US1] Remove all portfolio creation CTAs and creation-oriented copy from `web/src/app/features/portfolios/portfolios.component.ts`
-- [ ] T008 [P] [US1] Remove `createPortfolio()` from `web/src/app/core/services/api.service.ts` (and ensure no remaining call sites)
-- [ ] T009 [P] [US1] Verify `/portfolios` route remains configured in `web/src/app/app.routes.ts` (no create routes added)
-- [ ] T010 [P] [US1] Verify the main-nav entry for Portfolios remains in `web/src/app/app.component.ts` (read-only access preserved)
+- [x] T007 [US1] Remove all portfolio creation CTAs and creation-oriented copy from `web/src/app/features/portfolios/portfolios.component.ts`
+- [x] T008 [P] [US1] Remove `createPortfolio()` from `web/src/app/core/services/api.service.ts` (and ensure no remaining call sites)
+- [x] T009 [P] [US1] Verify `/portfolios` route remains configured in `web/src/app/app.routes.ts` (no create routes added)
+- [x] T010 [P] [US1] Verify the main-nav entry for Portfolios remains in `web/src/app/app.component.ts` (read-only access preserved)
 
 **Checkpoint**: UI still lists portfolios and is read-only.
 
@@ -63,15 +63,15 @@ description: "Task list for removing portfolio creation (UI + public API)"
 
 ### Tests (write first; should fail before implementation)
 
-- [ ] T011 [US2] Add/adjust a test asserting `POST /api/portfolios` returns `405` in `api/tests/test_portfolios_and_tagging.py`
-- [ ] T012 [US2] Refactor portfolio-listing scope assertions to seed portfolios via the new DB fixtures (not the API) in `api/tests/test_portfolios_and_tagging.py`
-- [ ] T013 [US2] Refactor the tagging test to seed a portfolio via DB fixtures (not the API) in `api/tests/test_portfolios_and_tagging.py`
+- [x] T011 [US2] Add/adjust a test asserting `POST /api/portfolios` returns `405` in `api/tests/test_portfolios_and_tagging.py`
+- [x] T012 [US2] Refactor portfolio-listing scope assertions to seed portfolios via the new DB fixtures (not the API) in `api/tests/test_portfolios_and_tagging.py`
+- [x] T013 [US2] Refactor the tagging test to seed a portfolio via DB fixtures (not the API) in `api/tests/test_portfolios_and_tagging.py`
 
 ### Implementation
 
-- [ ] T014 [US2] Remove the `@router.post("")` handler from `api/app/routers/portfolios.py` (preserve the `GET` handlers)
-- [ ] T015 [P] [US2] Remove `PortfolioCreate` schema from `api/app/schemas/trade.py` and clean up exports in `api/app/schemas/__init__.py`
-- [ ] T016 [US2] Run `cd api && uv run pytest` and confirm all tests pass
+- [x] T014 [US2] Remove the `@router.post("")` handler from `api/app/routers/portfolios.py` (preserve the `GET` handlers)
+- [x] T015 [P] [US2] Remove `PortfolioCreate` schema from `api/app/schemas/trade.py` and clean up exports in `api/app/schemas/__init__.py`
+- [x] T016 [US2] Run `cd api && uv run pytest` and confirm all tests pass
 
 **Checkpoint**: API rejects creation with `405` and existing reads/tagging still work.
 
@@ -85,16 +85,16 @@ description: "Task list for removing portfolio creation (UI + public API)"
 - Existing portfolios are still visible.
 - Tagging a transaction to an existing portfolio still works.
 
-- [ ] T017 [US3] Verify transaction tagging flow still works end-to-end after API/UI changes (update any necessary assertions in `api/tests/test_portfolios_and_tagging.py`)
-- [ ] T018 [US3] Sanity-check the transactions UI still loads portfolios and allows tagging in `web/src/app/features/transactions/transactions.component.ts`
+- [x] T017 [US3] Verify transaction tagging flow still works end-to-end after API/UI changes (update any necessary assertions in `api/tests/test_portfolios_and_tagging.py`)
+- [x] T018 [US3] Sanity-check the transactions UI still loads portfolios and allows tagging in `web/src/app/features/transactions/transactions.component.ts`
 
 ---
 
 ## Phase 6: Polish & Cross-Cutting Concerns (Required)
 
-- [ ] T019 Update PRD to remove portfolio creation requirement and API endpoint in `docs/TradeTracker_PRD_v1.0.md` (update FR-04 + remove `POST /api/portfolios` from API table; align conceptual data model language)
-- [ ] T020 Search repository docs for portfolio creation instructions and remove/adjust them (e.g., grep `docs/` + `README.md` for "create portfolio", "New Portfolio", and `POST /api/portfolios`)
-- [ ] T021 Run the manual checks in `specs/002-remove-portfolio-create/quickstart.md` and adjust if steps need updating
+- [x] T019 Update PRD to remove portfolio creation requirement and API endpoint in `docs/TradeTracker_PRD_v1.0.md` (update FR-04 + remove `POST /api/portfolios` from API table; align conceptual data model language)
+- [x] T020 Search repository docs for portfolio creation instructions and remove/adjust them (e.g., grep `docs/` + `README.md` for "create portfolio", "New Portfolio", and `POST /api/portfolios`)
+- [ ] T021 Run the manual checks in `specs/002-remove-portfolio-create/quickstart.md` and adjust if steps need updating (blocked: `node`/`npm` not installed in current environment)
 
 ---
 

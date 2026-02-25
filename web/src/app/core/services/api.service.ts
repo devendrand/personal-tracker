@@ -79,10 +79,6 @@ export class ApiService {
     return this.get<Portfolio[]>('/portfolios');
   }
 
-  createPortfolio(name: string): Observable<Portfolio> {
-    return this.post<Portfolio>('/portfolios', { name });
-  }
-
   tagTransaction(transactionId: string, portfolioId: string): Observable<Transaction> {
     return this.post<Transaction>(`/transactions/${transactionId}/tag`, { portfolio_id: portfolioId });
   }

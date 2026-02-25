@@ -38,10 +38,6 @@ class UploadResponse(ImportSummary):
     pass
 
 
-class PortfolioCreate(BaseModel):
-    name: str
-
-
 class PortfolioResponse(BaseModel):
     id: str
     name: str

@@ -3,7 +3,6 @@
 # Trade Tracker schemas
 from app.schemas.trade import (
     ImportSummary,
-    PortfolioCreate,
     PortfolioResponse,
     TransactionResponse,
     TransactionTagRequest,
@@ -45,7 +44,6 @@ __all__ = [
     "ImportSummary",
     "UploadResponse",
     "TransactionResponse",
-    "PortfolioCreate",
     "PortfolioResponse",
     "TransactionTagRequest",
     # Swim

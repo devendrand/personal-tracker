@@ -21,10 +21,6 @@ import { Portfolio } from '../../shared/models/portfolio.model';
     <div class="portfolios-container">
       <div class="header">
         <h1>Portfolios</h1>
-        <button mat-raised-button color="primary">
-          <mat-icon>add</mat-icon>
-          New Portfolio
-        </button>
       </div>
 
       @if (loading) {
@@ -36,12 +32,8 @@ import { Portfolio } from '../../shared/models/portfolio.model';
         <mat-card class="empty-state">
           <mat-card-content>
             <mat-icon>folder_open</mat-icon>
-            <h3>No portfolios yet</h3>
-            <p>Create a portfolio to start organizing your trades by strategy.</p>
-            <button mat-raised-button color="primary">
-              <mat-icon>add</mat-icon>
-              Create First Portfolio
-            </button>
+            <h3>No portfolios available</h3>
+            <p>There are no portfolios to display.</p>
           </mat-card-content>
         </mat-card>
       } @else {

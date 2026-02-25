@@ -92,7 +92,7 @@ The system shall detect and reject duplicate transaction records on re-upload, u
 
 #### FR-04: Portfolio Creation
 
-Users shall be able to create named portfolios/categories. Each portfolio shall have a name, description, color label, and type. Supported portfolio types shall include: Wheel Strategy, Covered Call, Long Hold, SIP (Systematic Investment Plan), Speculative, and Custom.
+Portfolio creation is not supported in the application UI or via the public API. Users may view and use any existing portfolios for transaction tagging.
 
 #### FR-05: Trade Tagging
 
@@ -196,8 +196,8 @@ For portfolios tagged as SIP, the system shall provide a dedicated view showing 
 | Entity | Key Fields | Notes |
 |--------|-----------|-------|
 | Transaction | id, date, ticker, action, quantity, price, fees, raw_data | Immutable after import |
-| Portfolio | id, name, type, description, color | User-defined groupings |
-| TransactionTag | transaction_id, portfolio_id, created_at | Many-to-many join |
+| Portfolio | id, name | Existing user-scoped groupings |
+| TransactionTag | transaction_id, portfolio_id | Implemented as `Transaction.portfolio_id` (single portfolio per transaction) |
 | StrategyChain | id, name, portfolio_id, status, created_at | Groups related transactions |
 | ChainLeg | chain_id, transaction_id, leg_order, notes | Ordered legs of a strategy |
 | TickerPrice | ticker, price, change, change_pct, updated_at | Cache of latest prices |
@@ -212,8 +212,7 @@ For portfolios tagged as SIP, the system shall provide a dedicated view showing 
 | POST | /api/transactions/upload | Upload E*TRADE CSV; returns parsed preview |
 | POST | /api/transactions/confirm | Confirm and persist parsed transactions |
 | GET | /api/transactions | List transactions (filterable/paginated) |
-| GET | /api/portfolios | List all portfolios |
-| POST | /api/portfolios | Create a new portfolio |
+| GET | /api/portfolios | List portfolios (read-only) |
 | POST | /api/tags/bulk | Tag one or more transactions to a portfolio |
 | GET | /api/reports/portfolio/{id} | Get portfolio summary report |
 | GET | /api/reports/ticker/{symbol} | Get ticker-level report |
