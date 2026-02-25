@@ -63,6 +63,12 @@ ng serve
 
 ### CI-equivalent checks (required before push)
 
+Run everything (recommended):
+
+```bash
+./scripts/ci_local.sh
+```
+
 Backend:
 
 ```bash
