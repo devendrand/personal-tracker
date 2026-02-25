@@ -133,8 +133,8 @@ cd web && ng serve
 
 **IMPORTANT: Follow these practices for all implementations:**
 
-1. **Update `main` First**: Always ensure local `main` is up to date with the remote before branching (fetch + fast-forward pull).
-2. **Create a Feature Branch**: Always create a `feature/<feature_name>` branch from the latest `main` for each implementation.
+1. **Start From `main`**: For every feature, start on `main`, update it (`fetch` + `pull --ff-only`), and only then create the feature branch.
+2. **Create a Feature Branch**: Always create a `feature/<feature_name>` branch from the updated `main` for each implementation.
 3. **Spec → Clarify → Plan → Implement**: Always create a specification, clarify underspecified areas, then plan, then implement.
 4. **Plan First**: Always document the implementation plan in `docs/plan/` before writing code
    - Create a markdown file describing the approach
