@@ -28,7 +28,11 @@ async def list_transactions(
     if not user_sub:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user")
 
-    stmt = select(Transaction).where(Transaction.user_sub == user_sub).order_by(Transaction.activity_date.desc())
+    stmt = (
+        select(Transaction)
+        .where(Transaction.user_sub == user_sub)
+        .order_by(Transaction.activity_date.desc())
+    )
     if assigned is True:
         stmt = stmt.where(Transaction.portfolio_id.is_not(None))
     if assigned is False:
@@ -131,14 +135,18 @@ async def tag_transaction(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user")
 
     txn_result = await db.execute(
-        select(Transaction).where(Transaction.id == transaction_id, Transaction.user_sub == user_sub)
+        select(Transaction).where(
+            Transaction.id == transaction_id, Transaction.user_sub == user_sub
+        )
     )
     txn = txn_result.scalar_one_or_none()
     if txn is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Transaction not found")
 
     portfolio_result = await db.execute(
-        select(Portfolio).where(Portfolio.id == payload.portfolio_id, Portfolio.user_sub == user_sub)
+        select(Portfolio).where(
+            Portfolio.id == payload.portfolio_id, Portfolio.user_sub == user_sub
+        )
     )
     portfolio = portfolio_result.scalar_one_or_none()
     if portfolio is None:

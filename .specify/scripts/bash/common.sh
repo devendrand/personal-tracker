@@ -70,17 +70,14 @@ check_feature_branch() {
         return 0
     fi
 
-    if [[ ! "$branch" =~ ^feature/ ]]; then
-        echo "ERROR: Not on a feature branch. Current branch: $branch" >&2
-        echo "Feature branches should be named like: feature/my-feature" >&2
-        return 1
+    # Accept either "feature/<name>" or "<NNN>-<name>" (e.g. 001-etrade-csv-import)
+    if [[ "$branch" =~ ^feature/ ]] || [[ "$branch" =~ ^[0-9]{3}- ]]; then
+        return 0
     fi
 
     echo "ERROR: Not on a feature branch. Current branch: $branch" >&2
     echo "Feature branches should be named like: 001-feature-name OR feature/feature-name" >&2
     return 1
-
-    return 0
 }
 
 get_feature_dir() { echo "$1/specs/$2"; }

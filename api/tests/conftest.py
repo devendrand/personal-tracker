@@ -1,11 +1,16 @@
 from __future__ import annotations
 
-from collections.abc import AsyncGenerator
-from typing import Any, Awaitable, Callable
+from collections.abc import AsyncGenerator, Awaitable, Callable
+from typing import Any
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
 from app.dependencies import get_db
 from app.main import app
@@ -33,7 +38,9 @@ def db_session_maker(db_engine: AsyncEngine) -> async_sessionmaker[AsyncSession]
 
 
 @pytest.fixture
-async def db_session(db_session_maker: async_sessionmaker[AsyncSession]) -> AsyncGenerator[AsyncSession, None]:
+async def db_session(
+    db_session_maker: async_sessionmaker[AsyncSession],
+) -> AsyncGenerator[AsyncSession, None]:
     async with db_session_maker() as session:
         try:
             yield session
@@ -55,7 +62,9 @@ def create_portfolio(db_session: AsyncSession) -> Callable[[str, str], Awaitable
 
 
 @pytest.fixture
-async def client(db_session_maker: async_sessionmaker[AsyncSession]) -> AsyncGenerator[AsyncClient, None]:
+async def client(
+    db_session_maker: async_sessionmaker[AsyncSession],
+) -> AsyncGenerator[AsyncClient, None]:
 
     async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
         async with db_session_maker() as session:

@@ -104,12 +104,12 @@ import { Transaction } from '../../shared/models/transaction.model';
 
               <ng-container matColumnDef="price">
                 <th mat-header-cell *matHeaderCellDef>Price</th>
-                <td mat-cell *matCellDef="let t">{{ t.price != null ? (t.price | currency) : '--' }}</td>
+                <td mat-cell *matCellDef="let t">{{ (t.price !== null && t.price !== undefined) ? (t.price | currency) : '--' }}</td>
               </ng-container>
 
               <ng-container matColumnDef="amount">
                 <th mat-header-cell *matHeaderCellDef>Amount</th>
-                <td mat-cell *matCellDef="let t">{{ t.amount != null ? (t.amount | currency) : '--' }}</td>
+                <td mat-cell *matCellDef="let t">{{ (t.amount !== null && t.amount !== undefined) ? (t.amount | currency) : '--' }}</td>
               </ng-container>
 
               <ng-container matColumnDef="portfolio">

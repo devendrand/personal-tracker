@@ -58,7 +58,9 @@ async def import_rows(
     for row in parsed_rows:
         dedupe = _dedupe_key(user_sub, row)
         existing = await session.execute(
-            select(Transaction.id).where(Transaction.user_sub == user_sub, Transaction.dedupe_key == dedupe)
+            select(Transaction.id).where(
+                Transaction.user_sub == user_sub, Transaction.dedupe_key == dedupe
+            )
         )
         if existing.scalar_one_or_none() is not None:
             batch.duplicates += 1

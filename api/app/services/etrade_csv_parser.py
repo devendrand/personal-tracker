@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 
-
 REQUIRED_COLUMNS = {
     "Activity/Trade Date",
     "Activity Type",
@@ -90,8 +89,6 @@ def parse_etrade_csv(text: str) -> tuple[list[ParsedRow], list[dict]]:
 
     if header_idx is None or header is None:
         raise ValueError("Missing required header columns")
-
-    col_index = {name: header.index(name) for name in header}
 
     parsed: list[ParsedRow] = []
     skipped: list[dict] = []

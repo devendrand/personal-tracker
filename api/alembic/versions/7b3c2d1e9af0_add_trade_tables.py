@@ -76,7 +76,9 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["portfolio_id"], ["portfolio.id"]),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(op.f("ix_transaction_activity_date"), "transaction", ["activity_date"], unique=False)
+    op.create_index(
+        op.f("ix_transaction_activity_date"), "transaction", ["activity_date"], unique=False
+    )
     op.create_index(op.f("ix_transaction_symbol"), "transaction", ["symbol"], unique=False)
     op.create_index(op.f("ix_transaction_user_sub"), "transaction", ["user_sub"], unique=False)
     op.create_index(

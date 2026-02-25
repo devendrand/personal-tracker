@@ -28,7 +28,9 @@ class Portfolio(Base):
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
 
-    transactions: Mapped[list["Transaction"]] = relationship("Transaction", back_populates="portfolio")
+    transactions: Mapped[list[Transaction]] = relationship(
+        "Transaction", back_populates="portfolio"
+    )
 
 
 class ImportBatch(Base):
@@ -53,7 +55,7 @@ class ImportBatch(Base):
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
 
-    transactions: Mapped[list["Transaction"]] = relationship(
+    transactions: Mapped[list[Transaction]] = relationship(
         "Transaction", back_populates="import_batch", cascade="all, delete-orphan"
     )
 
@@ -64,7 +66,9 @@ class Transaction(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid_str)
 
     user_sub: Mapped[str] = mapped_column(String(255), index=True, nullable=False)
-    import_batch_id: Mapped[str] = mapped_column(String(36), ForeignKey("import_batch.id"), nullable=False)
+    import_batch_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("import_batch.id"), nullable=False
+    )
 
     brokerage_account_id: Mapped[str] = mapped_column(String(255), nullable=False)
 
@@ -90,7 +94,9 @@ class Transaction(Base):
     raw: Mapped[dict] = mapped_column(JSON, nullable=False)
 
     # Portfolio tagging (unassigned is NULL)
-    portfolio_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("portfolio.id"), nullable=True)
+    portfolio_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("portfolio.id"), nullable=True
+    )
 
     # Used for duplicate prevention across uploads.
     dedupe_key: Mapped[str] = mapped_column(String(64), nullable=False)

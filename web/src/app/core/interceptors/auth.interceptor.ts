@@ -9,10 +9,10 @@ import { catchError, switchMap, tap, throwError } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 
-type TokenResponse = {
+interface TokenResponse {
   access_token: string;
   token_type?: string;
-};
+}
 
 const DID_RETRY = new HttpContextToken<boolean>(() => false);
 

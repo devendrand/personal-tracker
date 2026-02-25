@@ -18,9 +18,7 @@ async def list_portfolios(db: DbSession, current_user: CurrentUser) -> list[Port
 
     result = await db.execute(select(Portfolio).where(Portfolio.user_sub == user_sub))
     portfolios = result.scalars().all()
-    return [
-        PortfolioResponse(id=p.id, name=p.name, created_at=p.created_at) for p in portfolios
-    ]
+    return [PortfolioResponse(id=p.id, name=p.name, created_at=p.created_at) for p in portfolios]
 
 
 @router.get("/{portfolio_id}")
