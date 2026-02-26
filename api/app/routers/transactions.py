@@ -6,8 +6,13 @@ from fastapi import APIRouter, File, HTTPException, Query, UploadFile, status
 from sqlalchemy import select
 
 from app.dependencies import CurrentUser, DbSession
-from app.models.trade import Portfolio, Transaction
-from app.schemas.trade import TransactionResponse, TransactionTagRequest, UploadResponse
+from app.models.trade import StrategyType, Transaction
+from app.schemas.trade import (
+    StrategyTypeOption,
+    TransactionResponse,
+    TransactionStrategyTypePatchRequest,
+    UploadResponse,
+)
 from app.services.etrade_csv_parser import parse_etrade_csv
 from app.services.transaction_import_service import import_rows
 
@@ -22,7 +27,8 @@ async def list_transactions(
     current_user: CurrentUser,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
-    assigned: bool | None = Query(None),
+    tagged: bool | None = Query(None),
+    strategy_type: StrategyType | None = Query(None),
 ) -> list[TransactionResponse]:
     user_sub = str(current_user.get("sub") or "")
     if not user_sub:
@@ -33,10 +39,20 @@ async def list_transactions(
         .where(Transaction.user_sub == user_sub)
         .order_by(Transaction.activity_date.desc())
     )
-    if assigned is True:
-        stmt = stmt.where(Transaction.portfolio_id.is_not(None))
-    if assigned is False:
-        stmt = stmt.where(Transaction.portfolio_id.is_(None))
+
+    if tagged is False and strategy_type is not None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="strategy_type filter requires tagged=true (or omitted)",
+        )
+
+    if tagged is True:
+        stmt = stmt.where(Transaction.strategy_type.is_not(None))
+    if tagged is False:
+        stmt = stmt.where(Transaction.strategy_type.is_(None))
+
+    if strategy_type is not None:
+        stmt = stmt.where(Transaction.strategy_type == strategy_type.value)
 
     stmt = stmt.offset(skip).limit(limit)
     result = await db.execute(stmt)
@@ -51,7 +67,7 @@ async def list_transactions(
             quantity=t.quantity,
             price=t.price,
             amount=t.amount,
-            portfolio_id=t.portfolio_id,
+            strategy_type=StrategyType(t.strategy_type) if t.strategy_type else None,
             created_at=t.created_at,
         )
         for t in txns
@@ -123,10 +139,52 @@ async def confirm_transactions(db: DbSession, current_user: CurrentUser) -> dict
     raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Not implemented")
 
 
-@router.post("/{transaction_id}/tag")
-async def tag_transaction(
+@router.get("/strategy-types")
+async def list_strategy_types(
+    current_user: CurrentUser,
+) -> list[StrategyTypeOption]:
+    user_sub = str(current_user.get("sub") or "")
+    if not user_sub:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user")
+
+    return [
+        StrategyTypeOption(
+            value=StrategyType.WHEEL,
+            label="Wheel",
+            description="Sell CSPs, take assignment, then sell covered calls.",
+        ),
+        StrategyTypeOption(
+            value=StrategyType.COVERED_CALL,
+            label="Covered Call",
+            description="Hold shares and sell calls against the position.",
+        ),
+        StrategyTypeOption(
+            value=StrategyType.COLLAR,
+            label="Collar",
+            description="Hold shares with a protective put and a covered call.",
+        ),
+        StrategyTypeOption(
+            value=StrategyType.CSP,
+            label="Cash-Secured Put",
+            description="Sell puts backed by cash; may lead to assignment.",
+        ),
+        StrategyTypeOption(
+            value=StrategyType.LONG_HOLD,
+            label="Long Hold",
+            description="Long-term investment buys/holds (non-options focused).",
+        ),
+        StrategyTypeOption(
+            value=StrategyType.SIP,
+            label="SIP",
+            description="Systematic investment plan / recurring investing.",
+        ),
+    ]
+
+
+@router.patch("/{transaction_id}/strategy-type")
+async def patch_transaction_strategy_type(
     transaction_id: str,
-    payload: TransactionTagRequest,
+    payload: TransactionStrategyTypePatchRequest,
     db: DbSession,
     current_user: CurrentUser,
 ) -> TransactionResponse:
@@ -143,21 +201,16 @@ async def tag_transaction(
     if txn is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Transaction not found")
 
-    portfolio_result = await db.execute(
-        select(Portfolio).where(
-            Portfolio.id == payload.portfolio_id, Portfolio.user_sub == user_sub
-        )
-    )
-    portfolio = portfolio_result.scalar_one_or_none()
-    if portfolio is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Portfolio not found")
-
-    txn.portfolio_id = portfolio.id
+    txn.strategy_type = payload.strategy_type.value if payload.strategy_type else None
     await db.flush()
 
     logger.info(
-        "Transaction tagged",
-        extra={"user_sub": user_sub, "transaction_id": txn.id, "portfolio_id": portfolio.id},
+        "Transaction strategy_type updated",
+        extra={
+            "user_sub": user_sub,
+            "transaction_id": txn.id,
+            "strategy_type": txn.strategy_type,
+        },
     )
 
     return TransactionResponse(
@@ -169,6 +222,6 @@ async def tag_transaction(
         quantity=txn.quantity,
         price=txn.price,
         amount=txn.amount,
-        portfolio_id=txn.portfolio_id,
+        strategy_type=StrategyType(txn.strategy_type) if txn.strategy_type else None,
         created_at=txn.created_at,
     )

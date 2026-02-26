@@ -30,8 +30,9 @@ from app.schemas.swim import (
 from app.schemas.trade import (
     ImportSummary,
     PortfolioResponse,
+    StrategyTypeOption,
     TransactionResponse,
-    TransactionTagRequest,
+    TransactionStrategyTypePatchRequest,
     UploadResponse,
 )
 
@@ -41,7 +42,8 @@ __all__ = [
     "UploadResponse",
     "TransactionResponse",
     "PortfolioResponse",
-    "TransactionTagRequest",
+    "TransactionStrategyTypePatchRequest",
+    "StrategyTypeOption",
     # Swim
     "SwimmerCreate",
     "SwimmerUpdate",

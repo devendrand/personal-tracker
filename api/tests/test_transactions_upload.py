@@ -67,7 +67,8 @@ async def test_upload_imports_rows_and_marks_unassigned(client):
     assert list_resp.status_code == 200
     rows = list_resp.json()
     assert len(rows) == 2
-    assert all(row.get("portfolio_id") in (None, "") for row in rows)
+    assert all("portfolio_id" not in row for row in rows)
+    assert all(row.get("strategy_type") is None for row in rows)
 
 
 async def test_reupload_counts_duplicates(client):

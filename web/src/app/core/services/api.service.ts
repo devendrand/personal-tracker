@@ -62,10 +62,13 @@ export class ApiService {
     return this.http.post<T>(`${this.baseUrl}${endpoint}`, formData);
   }
 
-  getTransactions(params?: { assigned?: boolean }): Observable<Transaction[]> {
+  getTransactions(params?: { tagged?: boolean; strategy_type?: string }): Observable<Transaction[]> {
     const search = new URLSearchParams();
-    if (params?.assigned !== undefined) {
-      search.set('assigned', String(params.assigned));
+    if (params?.tagged !== undefined) {
+      search.set('tagged', String(params.tagged));
+    }
+    if (params?.strategy_type) {
+      search.set('strategy_type', params.strategy_type);
     }
     const suffix = search.toString() ? `?${search.toString()}` : '';
     return this.get<Transaction[]>(`/transactions${suffix}`);
@@ -79,7 +82,15 @@ export class ApiService {
     return this.get<Portfolio[]>('/portfolios');
   }
 
-  tagTransaction(transactionId: string, portfolioId: string): Observable<Transaction> {
-    return this.post<Transaction>(`/transactions/${transactionId}/tag`, { portfolio_id: portfolioId });
+  getStrategyTypes(): Observable<{ value: string; label: string; description: string }[]> {
+    return this.get<{ value: string; label: string; description: string }[]>(
+      '/transactions/strategy-types'
+    );
+  }
+
+  setTransactionStrategyType(transactionId: string, strategyType: string | null): Observable<Transaction> {
+    return this.patch<Transaction>(`/transactions/${transactionId}/strategy-type`, {
+      strategy_type: strategyType
+    });
   }
 }

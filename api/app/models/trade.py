@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
+from enum import StrEnum
 from uuid import uuid4
 
 from sqlalchemy import JSON, Date, DateTime, ForeignKey, Index, Numeric, String, Text
@@ -14,6 +15,15 @@ from app.models import Base
 
 def _uuid_str() -> str:
     return str(uuid4())
+
+
+class StrategyType(StrEnum):
+    WHEEL = "WHEEL"
+    COVERED_CALL = "COVERED_CALL"
+    COLLAR = "COLLAR"
+    CSP = "CSP"
+    LONG_HOLD = "LONG_HOLD"
+    SIP = "SIP"
 
 
 class Portfolio(Base):
@@ -28,9 +38,7 @@ class Portfolio(Base):
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
 
-    transactions: Mapped[list[Transaction]] = relationship(
-        "Transaction", back_populates="portfolio"
-    )
+    # Legacy entity retained, but transactions are no longer linked via FK.
 
 
 class ImportBatch(Base):
@@ -93,10 +101,8 @@ class Transaction(Base):
     # Raw row storage for traceability.
     raw: Mapped[dict] = mapped_column(JSON, nullable=False)
 
-    # Portfolio tagging (unassigned is NULL)
-    portfolio_id: Mapped[str | None] = mapped_column(
-        String(36), ForeignKey("portfolio.id"), nullable=True
-    )
+    # Strategy tagging (untagged is NULL)
+    strategy_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
     # Used for duplicate prevention across uploads.
     dedupe_key: Mapped[str] = mapped_column(String(64), nullable=False)
@@ -107,7 +113,6 @@ class Transaction(Base):
     )
 
     import_batch: Mapped[ImportBatch] = relationship("ImportBatch", back_populates="transactions")
-    portfolio: Mapped[Portfolio | None] = relationship("Portfolio", back_populates="transactions")
 
 
 Index("ix_transaction_user_dedupe", Transaction.user_sub, Transaction.dedupe_key, unique=True)
