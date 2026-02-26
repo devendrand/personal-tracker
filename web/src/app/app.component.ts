@@ -174,7 +174,6 @@ export class AppComponent {
       items: [
         { label: 'Dashboard', icon: 'dashboard', route: '/dashboard' },
         { label: 'Transactions', icon: 'receipt_long', route: '/transactions' },
-        { label: 'Portfolios', icon: 'folder', route: '/portfolios' }
       ]
     },
     {

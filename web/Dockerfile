@@ -6,6 +6,16 @@ FROM node:22-alpine AS dev
 
 WORKDIR /app
 
+# Support running Angular unit tests in Docker (ChromeHeadless via Chromium)
+RUN apk add --no-cache \
+	chromium \
+	nss \
+	freetype \
+	harfbuzz \
+	ttf-freefont
+
+ENV CHROME_BIN=/usr/bin/chromium-browser
+
 # Copy package files for dependency caching
 COPY package*.json ./
 
