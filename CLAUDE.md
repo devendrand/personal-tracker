@@ -99,7 +99,27 @@ Angular component → `ApiClientService` (HTTP + auth interceptor adds Bearer to
 
 1. Start from updated `main`: `git fetch && git pull --ff-only`
 2. Create a `feature/<name>` branch
-3. Write a spec/plan in `docs/plan/` before coding
+3. Write a spec/plan in `specs/` before coding
 4. Follow TDD: write failing tests first, then implement
 5. Sync with `main` before CI checks: merge/rebase `origin/main` into your branch
 6. Run CI-equivalent checks (`./scripts/ci_local.sh`) before `git push`
+
+## Speckit Workflow
+
+All feature work follows this spec-driven sequence before any code is written. Slash commands are defined in `.claude/commands/` and executed via the Skill tool.
+
+| Step | Command | Purpose |
+|------|---------|---------|
+| 1 | `/speckit.specify` | Create the feature spec: user scenarios, acceptance criteria, edge cases |
+| 2 | `/speckit.clarify` | Surface and resolve underspecified requirements (skip only if fully clear) |
+| 3 | `/speckit.plan` | Produce an implementation plan grounded in the spec |
+| 4 | `/speckit.tasks` | Generate a dependency-ordered `tasks.md` from the plan |
+| 5 | `/speckit.implement` | Execute all tasks in `tasks.md` |
+
+Additional commands:
+- `/speckit.analyze` — cross-artifact consistency check across spec, plan, and tasks (non-destructive)
+- `/speckit.checklist` — generate a feature-specific checklist
+- `/speckit.taskstoissues` — convert tasks into GitHub issues
+- `/speckit.constitution` — create or update `.specify/memory/constitution.md`
+
+Artifacts live in `specs/<NNN>-<feature-name>/` (e.g. `specs/004-user-auth/`). The constitution at `.specify/memory/constitution.md` is the authoritative source for project principles.
