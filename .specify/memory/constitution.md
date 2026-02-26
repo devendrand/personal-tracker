@@ -1,12 +1,15 @@
 <!--
 Sync Impact Report:
-- Version change: 1.3.1 → 1.3.2
+- Version change: 1.3.2 → 1.3.3
 - Modified principles:
-	- IX: CI-Equivalent Checks Before Push (clarified to sync with updated main immediately before running CI checks)
+	- VIII: Structured Version Control (branch naming simplified from feature/<feature_name> to feature/<name>)
+	- IX: CI-Equivalent Checks Before Push (branch naming simplified from feature/<feature_name> to feature/<name>)
 - Added sections: None
 - Removed sections: None
 - Templates requiring updates:
-	- ✅ .github/copilot-instructions.md
+	- ✅ .specify/templates/plan-template.md (branch placeholder updated)
+	- ✅ .specify/templates/spec-template.md (branch placeholder updated)
+	- ✅ .specify/templates/tasks-template.md (no branch references, no change needed)
 - Follow-up TODOs:
 	- None
 -->
@@ -26,7 +29,7 @@ All feature work MUST follow the Spec Kit workflow sequence so intent is capture
 4. `/speckit.tasks`: produce an executable task breakdown from the plan.
 5. `/speckit.implement`: implement strictly according to tasks.
 
-For milestone-level or cross-cutting work that isn’t tied to a single Spec Kit feature directory, maintain a plan in `docs/plan/` as well.
+For milestone-level or cross-cutting work that isn't tied to a single Spec Kit feature directory, maintain a plan in `docs/plan/` as well.
 
 ### III. Test-Driven Development (TDD)
 Development MUST follow a Test-Driven Development (TDD) approach:
@@ -55,14 +58,14 @@ All development must strictly adhere to the technologies and versions defined in
 The application is designed to be developed and deployed using containers. All services must be defined in the `docker-compose.yml` file, and every module must have a corresponding `Dockerfile`.
 
 ### VIII. Structured Version Control
-All work MUST be done on a `feature/<feature_name>` branch cut from the latest `main`:
+All work MUST be done on a `feature/<name>` branch cut from the latest `main`:
 
 - For every feature, you MUST start from `main`, update it, and only then create the feature branch.
 	Minimum required sequence:
 	- `git checkout main`
 	- `git fetch --all --prune`
 	- `git pull --ff-only`
-	- `git checkout -b feature/<feature_name>`
+	- `git checkout -b feature/<name>`
 - Do not commit directly to `main`.
 - Commit in small, focused increments with clear, descriptive messages.
 - Before pushing, follow Principle IX (CI-equivalent checks).
@@ -75,14 +78,14 @@ Immediately before running CI-equivalent checks, you MUST sync your feature bran
 - `git fetch --all --prune`
 - `git checkout main`
 - `git pull --ff-only`
-- `git checkout feature/<feature_name>`
+- `git checkout feature/<name>`
 - Integrate latest `main` into your feature branch (choose one and be consistent):
 	- Merge: `git merge --no-ff origin/main`
 	- Rebase: `git rebase origin/main`
 
 If this introduces changes or conflicts, resolve them and then run CI-equivalent checks.
 
-For this repository, “CI-equivalent” means matching the GitHub Actions CI workflow:
+For this repository, "CI-equivalent" means matching the GitHub Actions CI workflow:
 
 - **Backend (`api/`)**:
 
@@ -110,5 +113,4 @@ Versioning follows semantic versioning (MAJOR.MINOR.PATCH):
 - MINOR: new principles/sections or materially expanded guidance
 - PATCH: clarifications, wording, and non-semantic refinements
 
-**Version**: 1.3.2 | **Ratified**: 2026-02-22 | **Last Amended**: 2026-02-25
-
+**Version**: 1.3.3 | **Ratified**: 2026-02-22 | **Last Amended**: 2026-02-26
