@@ -21,9 +21,8 @@ export const routes: Routes = [
   },
   {
     path: 'portfolios',
-    loadComponent: () => import('./features/portfolios/portfolios.component')
-      .then(m => m.PortfoliosComponent),
-    title: 'Portfolios - Personal Tracker'
+    redirectTo: 'dashboard',
+    pathMatch: 'full'
   },
   // Swim Performance Tracker
   {

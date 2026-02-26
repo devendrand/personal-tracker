@@ -1,18 +1,7 @@
 # Feature Specification: Remove Portfolio Navigation & Page
 
-**Feature Branch**: `feature/remove-portfolio-nav`  
-**Created**: 2026-02-25  
-**Status**: Draft  
-**Input**: User description: "Remove the portfolio navigation menu and the related page from the app."
-
-## Clarifications
-
-### Session 2026-02-25
-
 - Q: Does this remove the Portfolio concept entirely? → A: No. Only remove the Portfolios navigation entry and the Portfolios page/route from the app.
-- Q: What happens to users who have bookmarked the Portfolios URL (`/portfolios`)? → A: Navigating to the old URL should not show a Portfolios page and should land on a valid page (e.g., dashboard).
-
-## User Scenarios & Testing *(mandatory)*
+- Q: What happens to users who have bookmarked the Portfolios URL (`/portfolios`)? → A: Redirect to `/dashboard`.
 
 <!--
   IMPORTANT: User stories should be PRIORITIZED as user journeys ordered by importance.
@@ -52,8 +41,8 @@ As a user, I cannot access a Portfolios page in the app.
 
 **Acceptance Scenarios**:
 
-1. **Given** I have a bookmarked Portfolios URL, **When** I navigate to it, **Then** I am redirected to a valid screen (e.g., dashboard) and the Portfolios page is not shown.
-2. **Given** I manually type the former Portfolios URL (`/portfolios`) into the address bar, **When** I load the page, **Then** I do not see a Portfolios page.
+1. **Given** I have a bookmarked Portfolios URL, **When** I navigate to it, **Then** I am redirected to `/dashboard` (URL updates) and the Portfolios page is not shown.
+2. **Given** I manually type the former Portfolios URL (`/portfolios`) into the address bar, **When** I load the page, **Then** I am redirected to `/dashboard` and I do not see a Portfolios page.
 
 ---
 
@@ -72,33 +61,28 @@ As a user, I can still tag transactions to existing portfolios where portfolio t
 
 ---
 
-[Add more user stories as needed, each with an assigned priority]
-
 ### Edge Cases
 
-<!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right edge cases.
--->
-
-- If a user has bookmarked the former Portfolios URL (`/portfolios`), the app should land on a valid screen and not show a broken/blank UI.
+- If a user has bookmarked the former Portfolios URL (`/portfolios`), the app should redirect to `/dashboard` and not show a broken/blank UI.
 - If the user navigates via browser back/forward into the former Portfolios URL, the app should behave consistently (no Portfolios page rendered).
 - If other areas reference “portfolios” (e.g., labeling in dashboards), those areas should continue to function (this feature is not required to rename or remove those references).
+
+**Automated Test Mapping (edge case → test)**
+
+- Bookmarked/manual `/portfolios` URL redirects to `/dashboard`: **T010** (router navigation test)
+- Browser back/forward behavior stays consistent (no portfolios page rendered): **T021** (Location.back() history simulation)
+- Dashboard “Portfolios” wording/cards remain (explicitly out of scope): **T022** (dashboard regression test)
 
 **Test Coverage Requirement**: Every edge case listed here MUST be covered by automated tests (unit/integration as appropriate).
 
 ## Requirements *(mandatory)*
 
-<!--
-  ACTION REQUIRED: The content in this section represents placeholders.
-  Fill them out with the right functional requirements.
--->
-
 ### Functional Requirements
 
 - **FR-001**: The application MUST NOT display a “Portfolios” navigation menu entry.
 - **FR-002**: The application MUST NOT provide an in-app Portfolios page.
-- **FR-003**: Navigating directly to the former Portfolios URL (`/portfolios`) MUST land the user on a valid screen and MUST NOT render a Portfolios page.
+- **FR-003**: Navigating directly to the former Portfolios URL (`/portfolios`) MUST redirect the user to `/dashboard` and MUST NOT render a Portfolios page.
+- **FR-003a**: The redirect from `/portfolios` MUST update the browser URL to `/dashboard`.
 - **FR-004**: The application MUST continue to support any existing portfolio-based transaction tagging workflows.
 - **FR-005**: No data migration is required; existing portfolio and transaction data MUST remain intact.
 
@@ -111,23 +95,19 @@ As a user, I can still tag transactions to existing portfolios where portfolio t
 
 - Portfolios may already exist (created historically or provisioned outside the removed UI route).
 - Removing the Portfolios navigation/page does not require removing portfolio-related reporting or labeling elsewhere.
+- The dashboard may continue to display portfolio-related labels/cards.
 
 ## Out of Scope
 
 - Removing portfolio tagging from transactions.
 - Removing portfolio-related backend endpoints.
-- Renaming portfolio terminology across the app.
+- Renaming portfolio terminology across the app (including dashboard “Portfolios” wording/cards).
 - Introducing a replacement screen for portfolio management.
 
 ## Success Criteria *(mandatory)*
 
-<!--
-  ACTION REQUIRED: Define measurable success criteria.
-  These must be technology-agnostic and measurable.
--->
-
 ### Measurable Outcomes
 
 - **SC-001**: Users cannot find a Portfolios navigation entry anywhere in the app.
-- **SC-002**: 100% of attempts to navigate directly to the former Portfolios URL land on a valid screen and do not render a Portfolios page.
+- **SC-002**: 100% of attempts to navigate directly to the former Portfolios URL (`/portfolios`) redirect to `/dashboard` and do not render a Portfolios page.
 - **SC-003**: Portfolio tagging on transactions continues to work for existing portfolios.
