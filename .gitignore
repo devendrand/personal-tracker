@@ -48,6 +48,9 @@ tmp/
 out-tsc/
 *.tsbuildinfo
 
+# Claude Code
+.claude/settings.local.json
+
 # IDE
 .idea/
 .vscode/
