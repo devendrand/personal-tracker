@@ -6,7 +6,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from app.core.config import settings
-from app.core.security import DEV_TOKEN, create_access_token
+from app.core.security import create_access_token
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -46,5 +46,10 @@ async def get_dev_token() -> Token:
     """Get a development token for testing.
 
     WARNING: Remove this endpoint in production!
+    Generates a fresh token on every call to avoid expiry issues during development.
     """
-    return Token(access_token=DEV_TOKEN)
+    access_token = create_access_token(
+        data={"sub": "dev_user", "dev": True},
+        expires_delta=timedelta(minutes=settings.access_token_expire_minutes),
+    )
+    return Token(access_token=access_token)
