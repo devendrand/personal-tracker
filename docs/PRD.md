@@ -25,10 +25,10 @@ This platform solves three distinct personal finance and fitness tracking proble
 ### 1.3 Goals
 
 - Ingest and parse E*TRADE transaction exports (CSV)
-- Tag trades to portfolios and named strategy types
+- Tag each transaction with a strategy type from a fixed system list
 - Support grouping of related transactions into strategy chains (e.g., Wheel Strategy)
 - Provide real-time price enrichment for tracked tickers
-- Generate portfolio-level and strategy-level performance reports
+- Generate strategy-level performance reports
 - Log swim times, auto-detect personal bests, and display progression charts
 - Record weekly net worth snapshots and visualize financial trends over time
 
@@ -96,12 +96,9 @@ The system shall detect and reject duplicate transaction records on re-upload us
 
 ---
 
-#### 4.2 Trade Tagging & Portfolio Management
+#### 4.2 Trade Tagging & Strategy Types
 
-##### FR-04: Portfolio Read-Only (Amended — Module A)
-Portfolio creation is **not supported** in the application UI or via the public API. `POST /api/portfolios` returns `405 Method Not Allowed`. Users may view and use any existing portfolios for transaction tagging. Portfolios represent user-scoped groupings (e.g., "my IWM trades") and are orthogonal to strategy type.
-
-##### FR-04a: Strategy Type as System Enum (Module A)
+##### FR-04: Strategy Type as System Enum (Module A)
 Strategy types are a hardcoded backend enum. There is no UI or API to create, rename, edit, or delete strategy types. The six supported values are fixed and may only be changed via a code change and redeployment.
 
 **Supported strategy types:**
@@ -128,7 +125,7 @@ The transaction log shall include an "Untagged" filter option that surfaces all 
 Users shall be able to group a series of related transactions into a named strategy chain. For example, a Wheel Strategy chain may include: (1) Sell Put, (2) Put Assignment, (3) Sell Covered Call, (4) Covered Call Delivery. The system shall display chained transactions together in the strategy view, showing net P&L across the entire chain.
 
 ##### FR-07: Auto-Tag Suggestions
-If a user has previously tagged a ticker to a specific portfolio or strategy, the system shall suggest the same tag when new transactions for that ticker are imported. The user must confirm or override the suggestion.
+If a user has previously tagged a ticker to a specific strategy type, the system shall suggest the same strategy type when new transactions for that ticker are imported. The user must confirm or override the suggestion.
 
 ---
 
@@ -147,8 +144,8 @@ The system shall distinguish between regular market hours (9:30 AM – 4:00 PM E
 
 #### 4.4 Reporting
 
-##### FR-11: Portfolio Summary Report
-The system shall generate a summary report per portfolio showing: total invested capital, current market value, unrealized P&L, realized P&L (from closed positions), total premium collected (for options strategies), win rate (% of profitable closed trades), and number of open vs. closed positions.
+##### FR-11: Strategy Type Summary Report
+The system shall generate a summary report per strategy type showing: total invested capital, current market value, unrealized P&L, realized P&L (from closed positions), total premium collected (for options strategies), win rate (% of profitable closed trades), and number of open vs. closed positions.
 
 ##### FR-12: Strategy Chain Report
 For strategy-chained trades, the report shall show each leg, premium received or paid per leg, net credit or debit for the chain, days in trade (DIT), annualized return on capital, and final status (open, closed, assigned, delivered).
@@ -157,10 +154,10 @@ For strategy-chained trades, the report shall show each leg, premium received or
 For any ticker, users shall be able to view all historical transactions, total shares currently held, average cost basis, current market value, unrealized gain/loss, and total dividends received.
 
 ##### FR-14: Transaction Log
-A complete, filterable, and sortable transaction log shall be available. Filters shall include: date range, ticker, transaction type, strategy type, portfolio/tag, assigned/unassigned status, and open/closed status.
+A complete, filterable, and sortable transaction log shall be available. Filters shall include: date range, ticker, transaction type, strategy type, tagged/untagged (strategy set or not set), and open/closed status.
 
 ##### FR-15: SIP Tracker
-For portfolios tagged as SIP, the system shall provide a dedicated view showing contribution history, average purchase price over time, total units accumulated, and current value vs. total invested.
+For transactions/positions tagged with the `SIP` strategy type, the system shall provide a dedicated view showing contribution history, average purchase price over time, total units accumulated, and current value vs. total invested.
 
 ---
 
@@ -289,7 +286,7 @@ Users shall be able to select any account type category (e.g., Retirement, Broke
 
 | ID | Category | Requirement |
 |----|----------|-------------|
-| NFR-01 | Performance | Dashboard shall load within 2 seconds for portfolios with up to 5,000 transactions. |
+| NFR-01 | Performance | Dashboard shall load within 2 seconds for accounts with up to 5,000 transactions. |
 | NFR-02 | Reliability | API uptime target of 99.5% for local/self-hosted deployment. |
 | NFR-03 | Security | All API endpoints shall require JWT authentication. Passwords shall be hashed with bcrypt. Dev-token endpoint is never active in production builds. |
 | NFR-04 | Scalability | Database schema shall support up to 100,000 transactions without schema changes. |
@@ -305,9 +302,8 @@ Users shall be able to select any account type category (e.g., Retirement, Broke
 
 | Entity | Key Fields | Notes |
 |--------|-----------|-------|
-| `transaction` | id, user_id, date, ticker, action, quantity, price, amount, fees, description, raw_data, portfolio_id, strategy_type, created_at | Immutable after import; `portfolio_id` is nullable (unassigned); `strategy_type` is nullable enum |
-| `portfolio` | id, user_id, name, created_at | Read-only in UI/API; used as grouping concept |
-| `strategy_chain` | id, name, portfolio_id, status, created_at | Groups related multi-leg transactions |
+| `transaction` | id, user_id, date, ticker, action, quantity, price, amount, fees, description, raw_data, strategy_type, created_at | Immutable after import; `strategy_type` is nullable enum |
+| `strategy_chain` | id, name, strategy_type, status, created_at | Groups related multi-leg transactions; typically aligned to a single strategy type |
 | `chain_leg` | chain_id, transaction_id, leg_order, notes | Ordered legs of a strategy chain |
 | `ticker_price` | ticker, price, change, change_pct, updated_at | Cache of latest prices from market API |
 | `price_history` | ticker, timestamp, open, high, low, close, volume | Optional historical OHLCV for charts |
@@ -354,14 +350,11 @@ Net worth, total assets, and total liabilities are calculated at query time from
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/api/transactions/upload` | Upload E*TRADE CSV; returns import summary |
-| GET | `/api/transactions` | List transactions (filters: `?strategy_type=`, `?assigned=true/false`, date, ticker, type) |
-| POST | `/api/transactions/{id}/tag` | Tag a transaction to a portfolio |
+| GET | `/api/transactions` | List transactions (filters: `?strategy_type=`, `?tagged=true/false`, date, ticker, type) |
 | PATCH | `/api/transactions/{id}/strategy` | Set or clear strategy type on a transaction |
-| POST | `/api/tags/bulk` | Bulk-tag transactions (optional `strategy_type` + `portfolio_id`) |
-| GET | `/api/portfolios` | List portfolios (read-only) |
-| POST | `/api/portfolios` | **Returns 405 Method Not Allowed** — creation not supported |
+| POST | `/api/tags/bulk` | Bulk-tag transactions (optional `strategy_type`) |
 | GET | `/api/strategy-types` | Returns hardcoded strategy type list (enum value + label + description) |
-| GET | `/api/reports/portfolio/{id}` | Portfolio summary report (breakdown by strategy type) |
+| GET | `/api/reports/strategy/{strategy_type}` | Strategy summary report |
 | GET | `/api/reports/ticker/{symbol}` | Ticker-level report |
 | POST | `/api/chains` | Create a strategy chain |
 | POST | `/api/chains/{id}/legs` | Add transaction legs to a chain |
@@ -414,9 +407,9 @@ Net worth, total assets, and total liabilities are calculated at query time from
 | US-02 | Tag my GOOGL trades as 'Wheel Strategy' so I can track that strategy separately. | Strategy type tag applied from fixed enum dropdown; trades visible under Wheel filter. |
 | US-03 | Group my GOOGL sell-put, assignment, and covered call into one strategy chain. | Chain created with 3 legs; net P&L displayed across all legs. |
 | US-04 | See the current price of GOOGL whenever I view my GOOGL positions. | Current price shown with daily change; refreshed every 60s during market hours. |
-| US-05 | View a report for my Wheel Strategy portfolio showing total premium collected. | Report shows realized/unrealized P&L, premium collected, win rate, broken down by strategy type. |
-| US-06 | Track my SPY monthly SIP contributions and see my average cost basis. | SIP portfolio shows contribution history, average cost, total units, and current value. |
-| US-07 | Filter my transaction log by ticker, date, strategy, and assigned status. | Transaction log supports multi-filter with real-time results including "Untagged" filter. |
+| US-05 | View a report for my Wheel Strategy showing total premium collected. | Report shows realized/unrealized P&L, premium collected, win rate, broken down by strategy type. |
+| US-06 | Track my SPY monthly SIP contributions and see my average cost basis. | SIP strategy view shows contribution history, average cost, total units, and current value. |
+| US-07 | Filter my transaction log by ticker, date, and strategy tag status. | Transaction log supports multi-filter with real-time results including "Untagged" filter. |
 
 ### Swim Tracker
 
@@ -448,17 +441,17 @@ The following features have been fully implemented and are live in the codebase.
 
 **Status:** Implemented | **Branch:** `feature/etrade-csv-import`
 
-**What was built:** CSV upload endpoint, row parsing and normalization, duplicate detection, import summary, unassigned filter view, and transaction-to-portfolio tagging.
+**What was built:** CSV upload endpoint, row parsing and normalization, duplicate detection, import summary, unassigned filter view, and legacy transaction-to-portfolio tagging.
 
 **Key decisions:**
 - All activity types (including transfers and cash movements) are imported as transactions — nothing is skipped based on type.
-- All imported transactions start as unassigned regardless of existing portfolios; no automatic tagging during import.
+- All imported transactions start untagged (no strategy type set); no automatic tagging during import.
 - Duplicate detection key: user + activity date + activity type + description + symbol + quantity + amount.
 - The parser handles E*TRADE's non-tabular header/footer lines (report headers, totals rows, disclaimer text) — these are safely ignored.
 - Placeholder values like `--` or blank in optional fields (symbol, quantity, price) are accepted; the row is still imported.
 - A stable pseudo-account identifier is used for all uploads in this iteration (no multi-account separation yet).
 
-**Constraints / out of scope:** Real-time brokerage sync; automated reconciliation of historical records beyond duplicate prevention; portfolio analytics beyond storage and tagging.
+**Constraints / out of scope:** Real-time brokerage sync; automated reconciliation of historical records beyond duplicate prevention; strategy tagging and strategy reporting.
 
 ---
 
@@ -466,15 +459,13 @@ The following features have been fully implemented and are live in the codebase.
 
 **Status:** Implemented | **Branch:** `feature/remove-portfolio-create`
 
-**What was built:** Removed `POST /api/portfolios` handler (now returns `405 Method Not Allowed`). Removed all "Create Portfolio" UI, buttons, pages, and calls-to-action. Portfolio listing and transaction-to-portfolio tagging remain fully functional.
+**What was built:** (Legacy portfolio system) Removed `POST /api/portfolios` handler (now returns `405 Method Not Allowed`). Removed all "Create Portfolio" UI, buttons, pages, and calls-to-action.
 
 **Key decisions:**
-- Portfolio creation is intentionally disabled at both API and UI layers per Module A decision: strategy types are system-managed enums; portfolios are pre-existing groupings.
-- `GET /api/portfolios` remains and continues to return existing portfolios.
-- The Portfolios screen remained in the navigation at this stage (removed in Feature 003).
-- Empty-state views do not offer portfolio creation.
+- Portfolio creation was intentionally disabled at both API and UI layers.
+- This legacy portfolio system is expected to be removed once strategy type tagging fully replaces portfolio tagging.
 
-**Constraints / out of scope:** Strategy Type tagging implementation; portfolio provisioning mechanisms; changes to portfolio-based reporting.
+**Constraints / out of scope:** Strategy type tagging implementation; portfolio deprecation and removal.
 
 ---
 
@@ -482,15 +473,13 @@ The following features have been fully implemented and are live in the codebase.
 
 **Status:** Implemented | **Branch:** `feature/remove-portfolio-nav`
 
-**What was built:** Removed "Portfolios" entry from the main navigation. Removed the `/portfolios` Angular route and page. Added a redirect from `/portfolios` → `/dashboard` (URL updates in browser).
+**What was built:** (Legacy portfolio system) Removed "Portfolios" entry from the main navigation. Removed the `/portfolios` Angular route and page. Added a redirect from `/portfolios` → `/dashboard` (URL updates in browser).
 
 **Key decisions:**
-- Portfolios as a concept are not removed — portfolio tagging on transactions continues to work.
-- `/portfolios` URL redirect goes to `/dashboard` and updates the browser URL.
-- Dashboard may still reference portfolio labels/cards; renaming those references is explicitly out of scope.
-- Browser back/forward navigation into the former `/portfolios` URL behaves consistently (no broken page rendered).
+- This was a UI cleanup for the legacy portfolio system.
+- Portfolio references should be phased out as strategy type tagging becomes the single classification mechanism.
 
-**Constraints / out of scope:** Removing portfolio-related backend endpoints; renaming portfolio terminology across the app; introducing a replacement portfolio management screen.
+**Constraints / out of scope:** Removing portfolio-related backend endpoints; migrating existing portfolio tags to strategy tags.
 
 ---
 
@@ -520,12 +509,13 @@ The following features have been fully implemented and are live in the codebase.
 | Milestone | Deliverables | Status |
 |-----------|-------------|--------|
 | M1 – Foundation | DB schema, FastAPI skeleton, JWT auth, E*TRADE CSV parser, basic transaction list UI | Done (Feature 001) |
-| M2 – Tagging | Transaction tagging (single + bulk), Portfolios read-only, remove portfolio create/nav | Done (Features 001–003) |
+| M2 – Tagging (Legacy) | Transaction tagging (portfolio-based), remove portfolio create/nav | Done (Features 001–003) |
+| M2b – Tagging (Strategy) | Strategy type tagging (single + bulk), untagged filter, remove legacy portfolio tagging | Pending |
 | M2a – Dev Auth | Fix dev token freshness + bootstrap expiry check | Done (Feature 004) |
 | M3 – Strategy Chains | Strategy chain creation, leg management, chain P&L calculation, chain report view | Pending |
 | M4 – Strategy Types UI | Strategy type dropdown in transaction view, bulk-tag with strategy, untagged filter view | Pending |
 | M5 – Live Prices | Free API integration, WebSocket price feed, price display in portfolio views | Pending |
-| M6 – Reports | Portfolio summary, ticker report, SIP tracker, transaction log with full filters, export to CSV | Pending |
+| M6 – Reports | Strategy summary, ticker report, SIP tracker, transaction log with full filters, export to CSV | Pending |
 | M7 – Swim Tracker | Swimmer profile, event catalog seeding, time entry, PR auto-detection, meet log, progression chart, PR dashboard, time history log | Pending |
 | M8 – Net Worth Tracker | Account setup, weekly snapshot entry form, snapshot history, reminder badge, dashboard summary card, trend chart, snapshot breakdown, category drill-down | Pending |
 | M9 – Polish | Error handling, loading states, mobile-responsive layout, performance tuning | Pending |
@@ -540,7 +530,7 @@ The following features have been fully implemented and are live in the codebase.
 - **Partial fills:** How should partial fills (multiple fill prices for one order) be handled in the CSV parser?
 - **Manual entry:** Should the system support manual transaction entry in addition to CSV upload?
 - **Strategy chain and strategy type alignment:** Should the strategy type on each leg transaction be auto-set to `WHEEL` when a Wheel chain is created, or should leg-level tagging remain manual?
-- **Strategy-type-level reporting:** Should there be a dedicated strategy-type report (e.g., "all my Wheel trades and combined P&L") in addition to portfolio-level reports?
+- **Strategy-type-level reporting:** Should there be a dedicated strategy-type report (e.g., "all my Wheel trades and combined P&L") in addition to the strategy summary report?
 - **Historical data:** Should historical price data be stored for backtesting or chart visualization in a future phase?
 
 **Swim Tracker**

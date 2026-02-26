@@ -9,8 +9,13 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { ApiService } from '../../core/services/api.service';
-import { Portfolio } from '../../shared/models/portfolio.model';
 import { Transaction } from '../../shared/models/transaction.model';
+
+interface StrategyTypeOption {
+  value: string;
+  label: string;
+  description: string;
+}
 
 @Component({
   selector: 'app-transactions',
@@ -58,8 +63,22 @@ import { Transaction } from '../../shared/models/transaction.model';
           aria-label="Transaction filter"
         >
           <mat-button-toggle value="all">All</mat-button-toggle>
-          <mat-button-toggle value="unassigned">Unassigned</mat-button-toggle>
+          <mat-button-toggle value="unassigned">Untagged</mat-button-toggle>
         </mat-button-toggle-group>
+
+        <mat-form-field appearance="fill" style="width: 220px; margin-left: 12px;">
+          <mat-select
+            [disabled]="showUnassignedOnly"
+            [value]="selectedStrategyType"
+            (selectionChange)="onStrategyFilterSelected($event.value)"
+            placeholder="All strategies"
+          >
+            <mat-option value="">All strategies</mat-option>
+            @for (opt of strategyTypeOptions; track opt.value) {
+              <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
       </div>
 
       <mat-card>
@@ -112,21 +131,21 @@ import { Transaction } from '../../shared/models/transaction.model';
                 <td mat-cell *matCellDef="let t">{{ (t.amount !== null && t.amount !== undefined) ? (t.amount | currency) : '--' }}</td>
               </ng-container>
 
-              <ng-container matColumnDef="portfolio">
-                <th mat-header-cell *matHeaderCellDef>Portfolio</th>
+              <ng-container matColumnDef="strategy_type">
+                <th mat-header-cell *matHeaderCellDef>Strategy Type</th>
                 <td mat-cell *matCellDef="let t">
-                  @if (portfolios.length === 0) {
+                  @if (strategyTypeOptions.length === 0) {
                     <span>--</span>
                   } @else {
                     <mat-form-field appearance="fill" style="width: 220px;">
                       <mat-select
-                        [value]="t.portfolio_id ?? ''"
-                        (selectionChange)="onPortfolioSelected(t, $event.value)"
-                        placeholder="Unassigned"
+                        [value]="t.strategy_type ?? ''"
+                        (selectionChange)="onStrategyTypeSelected(t, $event.value)"
+                        placeholder="Untagged"
                       >
-                        <mat-option value="">Unassigned</mat-option>
-                        @for (p of portfolios; track p.id) {
-                          <mat-option [value]="p.id">{{ p.name }}</mat-option>
+                        <mat-option value="">Untagged</mat-option>
+                        @for (opt of strategyTypeOptions; track opt.value) {
+                          <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
                         }
                       </mat-select>
                     </mat-form-field>
@@ -219,21 +238,25 @@ export class TransactionsComponent implements OnInit {
   private api = inject(ApiService);
 
   transactions: Transaction[] = [];
-  portfolios: Portfolio[] = [];
+  strategyTypeOptions: StrategyTypeOption[] = [];
   loading = true;
   uploading = false;
   showUnassignedOnly = false;
+  selectedStrategyType = '';
   uploadSummary: { imported: number; skipped: number; failed: number; duplicates: number } | null = null;
 
-  displayedColumns = ['date', 'symbol', 'type', 'description', 'quantity', 'price', 'amount', 'portfolio'];
+  displayedColumns = ['date', 'symbol', 'type', 'description', 'quantity', 'price', 'amount', 'strategy_type'];
 
   ngOnInit(): void {
-    this.loadPortfolios();
+    this.loadStrategyTypes();
     this.loadTransactions();
   }
 
   onFilterChanged(value: string): void {
     this.showUnassignedOnly = value === 'unassigned';
+    if (this.showUnassignedOnly) {
+      this.selectedStrategyType = '';
+    }
     this.loadTransactions();
   }
 
@@ -259,28 +282,31 @@ export class TransactionsComponent implements OnInit {
     input.value = '';
   }
 
-  onPortfolioSelected(t: Transaction, portfolioId: string): void {
-    // Only support assigning to a real portfolio; "Unassigned" is a no-op in v1.
-    if (!portfolioId) {
-      return;
-    }
-    this.api.tagTransaction(t.id, portfolioId).subscribe({
+  onStrategyFilterSelected(strategyType: string): void {
+    this.selectedStrategyType = strategyType;
+    this.loadTransactions();
+  }
+
+  onStrategyTypeSelected(t: Transaction, strategyType: string): void {
+    const value = strategyType || null;
+    this.api.setTransactionStrategyType(t.id, value).subscribe({
       next: () => this.loadTransactions(),
       error: (err) => console.error('Tagging failed:', err)
     });
   }
 
-  loadPortfolios(): void {
-    this.api.getPortfolios().subscribe({
-      next: (data) => (this.portfolios = data),
-      error: (err) => console.error('Failed to load portfolios:', err)
+  loadStrategyTypes(): void {
+    this.api.getStrategyTypes().subscribe({
+      next: (data) => (this.strategyTypeOptions = data),
+      error: (err) => console.error('Failed to load strategy types:', err)
     });
   }
 
   loadTransactions(): void {
     this.loading = true;
-    const assigned = this.showUnassignedOnly ? false : undefined;
-    this.api.getTransactions({ assigned }).subscribe({
+    const tagged = this.showUnassignedOnly ? false : undefined;
+    const strategy_type = this.selectedStrategyType || undefined;
+    this.api.getTransactions({ tagged, strategy_type }).subscribe({
       next: (data) => {
         this.transactions = data;
         this.loading = false;

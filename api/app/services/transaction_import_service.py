@@ -84,7 +84,7 @@ async def import_rows(
             category=row.category,
             note=row.note,
             raw=row.raw,
-            portfolio_id=None,
+            strategy_type=None,
             dedupe_key=dedupe,
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),

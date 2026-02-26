@@ -13,7 +13,7 @@ export interface Transaction {
   price?: number | null;
   amount?: number | null;
 
-  portfolio_id?: string | null;
+  strategy_type: string | null;
   created_at: string;
 }
 

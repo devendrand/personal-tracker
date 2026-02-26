@@ -7,6 +7,8 @@ from decimal import Decimal
 
 from pydantic import BaseModel
 
+from app.models.trade import StrategyType
+
 
 class ImportSummary(BaseModel):
     imported: int
@@ -29,7 +31,7 @@ class TransactionResponse(BaseModel):
     price: Decimal | None = None
     amount: Decimal | None = None
 
-    portfolio_id: str | None = None
+    strategy_type: StrategyType | None = None
 
     created_at: datetime
 
@@ -46,3 +48,13 @@ class PortfolioResponse(BaseModel):
 
 class TransactionTagRequest(BaseModel):
     portfolio_id: str
+
+
+class TransactionStrategyTypePatchRequest(BaseModel):
+    strategy_type: StrategyType | None
+
+
+class StrategyTypeOption(BaseModel):
+    value: StrategyType
+    label: str
+    description: str

@@ -7,25 +7,25 @@ import { ApiService } from '../../core/services/api.service';
 import { Transaction } from '../../shared/models/transaction.model';
 import { TransactionsComponent } from './transactions.component';
 
-describe('TransactionsComponent (portfolio tagging)', () => {
+describe('TransactionsComponent (strategy type tagging)', () => {
   let fixture: ComponentFixture<TransactionsComponent>;
   let component: TransactionsComponent;
   let api: jasmine.SpyObj<ApiService>;
 
   beforeEach(async () => {
     api = jasmine.createSpyObj<ApiService>('ApiService', [
-      'getPortfolios',
       'getTransactions',
-      'tagTransaction',
+      'getStrategyTypes',
+      'setTransactionStrategyType',
       'uploadTransactionsCsv'
     ]);
 
-    api.getPortfolios.and.returnValue(
+    api.getStrategyTypes.and.returnValue(
       of([
         {
-          id: 'p1',
-          name: 'Long Term',
-          created_at: '2026-01-01T00:00:00Z'
+          value: 'WHEEL',
+          label: 'Wheel',
+          description: 'Sell CSPs, take assignment, then sell covered calls.'
         }
       ])
     );
@@ -41,7 +41,7 @@ describe('TransactionsComponent (portfolio tagging)', () => {
           quantity: 1,
           price: 100,
           amount: 100,
-          portfolio_id: null,
+          strategy_type: null,
           created_at: '2026-01-15T00:00:00Z'
         }
       ])
@@ -56,11 +56,11 @@ describe('TransactionsComponent (portfolio tagging)', () => {
       quantity: 1,
       price: 100,
       amount: 100,
-      portfolio_id: 'p1',
+      strategy_type: 'WHEEL',
       created_at: '2026-01-15T00:00:00Z'
     };
 
-    api.tagTransaction.and.returnValue(of(taggedTransaction));
+    api.setTransactionStrategyType.and.returnValue(of(taggedTransaction));
 
     await TestBed.configureTestingModule({
       imports: [TransactionsComponent, NoopAnimationsModule],
@@ -77,16 +77,46 @@ describe('TransactionsComponent (portfolio tagging)', () => {
     fixture.detectChanges();
 
     const selectDebug = fixture.debugElement.query(By.css('mat-select'));
-    expect(selectDebug).withContext('Expected a mat-select in the Portfolio column').toBeTruthy();
+    expect(selectDebug).withContext('Expected a mat-select for Strategy Type').toBeTruthy();
   }));
 
-  it('calls ApiService.tagTransaction when a portfolio is selected', fakeAsync(() => {
+  it('renders an "Untagged" filter toggle', fakeAsync(() => {
+    fixture.detectChanges();
+    tick();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Untagged');
+  }));
+
+  it('passes tagged=false when filtering to untagged', fakeAsync(() => {
+    fixture.detectChanges();
+    tick();
+
+    component.onFilterChanged('unassigned');
+
+    expect(api.getTransactions).toHaveBeenCalledWith(
+      jasmine.objectContaining({ tagged: false })
+    );
+  }));
+
+  it('passes strategy_type when selecting a strategy filter', fakeAsync(() => {
+    fixture.detectChanges();
+    tick();
+
+    component.onStrategyFilterSelected('WHEEL');
+
+    expect(api.getTransactions).toHaveBeenCalledWith(
+      jasmine.objectContaining({ strategy_type: 'WHEEL' })
+    );
+  }));
+
+  it('calls ApiService.setTransactionStrategyType when a strategy type is selected', fakeAsync(() => {
     fixture.detectChanges();
     tick();
 
     const tx = component.transactions[0];
-    component.onPortfolioSelected(tx, 'p1');
+    component.onStrategyTypeSelected(tx, 'WHEEL');
 
-    expect(api.tagTransaction).toHaveBeenCalledWith('t1', 'p1');
+    expect(api.setTransactionStrategyType).toHaveBeenCalledWith('t1', 'WHEEL');
   }));
 });

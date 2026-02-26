@@ -1,11 +1,11 @@
 # trade-tracker Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-02-25
+Auto-generated from all feature plans. Last updated: 2026-02-26
 
 ## Active Technologies
-- PostgreSQL 17 (feature/remove-portfolio-create)
-
-- Python 3.12+ (backend), TypeScript (strict) + Angular 19+ (frontend) + FastAPI, SQLAlchemy 2.0 (async), Alembic, Angular Material (feature/remove-portfolio-create)
+- Python 3.12 (backend), TypeScript (frontend) + FastAPI, Pydantic, SQLAlchemy 2.0 (async), Alembic; Angular 19, Angular Material (006-strategy-type-tagging)
+  
+- PostgreSQL 17 (006-strategy-type-tagging)
 
 ## Project Structure
 
@@ -36,9 +36,9 @@ docker compose run --rm --no-deps web sh -lc "npm ci && npm run lint && npm run 
 Python 3.12+ (backend), TypeScript (strict) + Angular 19+ (frontend): Follow standard conventions
 
 ## Recent Changes
-- feature/remove-portfolio-create: Added Python 3.12+ (backend), TypeScript (strict) + Angular 19+ (frontend) + FastAPI, SQLAlchemy 2.0 (async), Alembic, Angular Material
+- 006-strategy-type-tagging: Added Python 3.12 (backend), TypeScript (frontend) + FastAPI, Pydantic, SQLAlchemy 2.0 (async), Alembic; Angular 19, Angular Material
+- 006-strategy-type-tagging: Added PostgreSQL 17
 
-- feature/remove-portfolio-create: Added Python 3.12+ (backend), TypeScript (strict) + Angular 19+ (frontend) + FastAPI, SQLAlchemy 2.0 (async), Alembic, Angular Material
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
