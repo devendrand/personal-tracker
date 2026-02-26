@@ -1,7 +1,7 @@
 # Implementation Plan: [FEATURE]
 
-**Branch**: `feature/<feature_name>` | **Date**: [DATE] | **Spec**: [link]
-**Input**: Feature specification from `/specs/<feature_id>-<feature_name>/spec.md`
+**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
+**Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
 
 **Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/plan-template.md` for the execution workflow.
 
@@ -33,15 +33,12 @@
 
 [Gates determined based on constitution file]
 
-At minimum, include a gate confirming the plan defines the CI-equivalent checks
-that MUST be run before pushing.
-
 ## Project Structure
 
 ### Documentation (this feature)
 
 ```text
-specs/<feature_id>-<feature_name>/
+specs/[###-feature]/
 ├── plan.md              # This file (/speckit.plan command output)
 ├── research.md          # Phase 0 output (/speckit.plan command)
 ├── data-model.md        # Phase 1 output (/speckit.plan command)

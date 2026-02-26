@@ -234,29 +234,10 @@ format_technology_stack() {
 # Template and Content Generation Functions
 #==============================================================================
 
-escape_sed_replacement() {
-    local value="$1"
-    # Escape replacement metacharacters for sed.
-    # - '\\' is escape in sed replacement
-    # - '&' expands to the matched text in sed replacement
-    # - '|' is our chosen delimiter
-    value="${value//\\/\\\\}"
-    value="${value//&/\\&}"
-    value="${value//|/\\|}"
-    printf '%s' "$value"
-}
-
 get_project_structure() {
     local project_type="$1"
-
-    # Prefer deriving from the actual repository layout when possible.
-    if [[ -d "$REPO_ROOT/api" || -d "$REPO_ROOT/web" ]]; then
-        echo "api/\\nweb/\\ndocs/\\nspecs/"
-        return 0
-    fi
-
-    local project_type_lc="${project_type,,}"
-    if [[ "$project_type_lc" == *"web"* ]]; then
+    
+    if [[ "$project_type" == *"web"* ]]; then
         echo "backend/\\nfrontend/\\ntests/"
     else
         echo "src/\\ntests/"
@@ -265,58 +246,16 @@ get_project_structure() {
 
 get_commands_for_language() {
     local lang="$1"
-
-    # Prefer deriving commands from repository layout (monorepo: api/ + web/).
-    if [[ -d "$REPO_ROOT/api" || -d "$REPO_ROOT/web" ]]; then
-        local lines=(
-            '```bash'
-            '# Start all services'
-            'docker compose up --build'
-        )
-
-        if [[ -d "$REPO_ROOT/api" ]]; then
-            lines+=(
-                ""
-                '# Backend (api/)'
-                'cd api && uv run ruff check .'
-                'cd api && uv run ruff format --check .'
-                'cd api && uv run mypy app --ignore-missing-imports'
-                'cd api && uv run pytest'
-            )
-        fi
-
-        if [[ -d "$REPO_ROOT/web" ]]; then
-            lines+=(
-                ""
-                '# Frontend (web/) via Docker (no host Node required)'
-                'docker compose run --rm --no-deps web sh -lc "npm ci && npm run lint && npm run build -- --configuration=production"'
-            )
-        fi
-
-        lines+=('```')
-
-        local out=""
-        local line
-        for line in "${lines[@]}"; do
-            if [[ -n "$out" ]]; then
-                out+="\\n"
-            fi
-            out+="$line"
-        done
-
-        echo "$out"
-        return 0
-    fi
-
+    
     case "$lang" in
         *"Python"*)
-            echo "pytest \\n ruff check ."
+            echo "cd src && pytest && ruff check ."
             ;;
         *"Rust"*)
-            echo "cargo test \\n cargo clippy"
+            echo "cargo test && cargo clippy"
             ;;
         *"JavaScript"*|*"TypeScript"*)
-            echo "npm test \\n npm run lint"
+            echo "npm test \\&\\& npm run lint"
             ;;
         *)
             echo "# Add commands for $lang"
@@ -346,76 +285,76 @@ create_new_agent_file() {
     fi
     
     log_info "Creating new agent context file from template..."
-
-    # Compute template values.
+    
+    if ! cp "$TEMPLATE_FILE" "$temp_file"; then
+        log_error "Failed to copy template file"
+        return 1
+    fi
+    
+    # Replace template placeholders
     local project_structure
     project_structure=$(get_project_structure "$NEW_PROJECT_TYPE")
+    
     local commands
     commands=$(get_commands_for_language "$NEW_LANG")
+    
     local language_conventions
     language_conventions=$(get_language_conventions "$NEW_LANG")
-
-    # Build technology stack and recent change strings conditionally (markdown bullet lines).
+    
+    # Perform substitutions with error checking using safer approach
+    # Escape special characters for sed by using a different delimiter or escaping
+    local escaped_lang=$(printf '%s\n' "$NEW_LANG" | sed 's/[\[\.*^$()+{}|]/\\&/g')
+    local escaped_framework=$(printf '%s\n' "$NEW_FRAMEWORK" | sed 's/[\[\.*^$()+{}|]/\\&/g')
+    local escaped_branch=$(printf '%s\n' "$CURRENT_BRANCH" | sed 's/[\[\.*^$()+{}|]/\\&/g')
+    
+    # Build technology stack and recent change strings conditionally
     local tech_stack
-    if [[ -n "$NEW_LANG" && -n "$NEW_FRAMEWORK" ]]; then
-        tech_stack="- $NEW_LANG + $NEW_FRAMEWORK ($CURRENT_BRANCH)"
-    elif [[ -n "$NEW_LANG" ]]; then
-        tech_stack="- $NEW_LANG ($CURRENT_BRANCH)"
-    elif [[ -n "$NEW_FRAMEWORK" ]]; then
-        tech_stack="- $NEW_FRAMEWORK ($CURRENT_BRANCH)"
+    if [[ -n "$escaped_lang" && -n "$escaped_framework" ]]; then
+        tech_stack="- $escaped_lang + $escaped_framework ($escaped_branch)"
+    elif [[ -n "$escaped_lang" ]]; then
+        tech_stack="- $escaped_lang ($escaped_branch)"
+    elif [[ -n "$escaped_framework" ]]; then
+        tech_stack="- $escaped_framework ($escaped_branch)"
     else
-        tech_stack="- ($CURRENT_BRANCH)"
+        tech_stack="- ($escaped_branch)"
     fi
 
     local recent_change
-    if [[ -n "$NEW_LANG" && -n "$NEW_FRAMEWORK" ]]; then
-        recent_change="- $CURRENT_BRANCH: Added $NEW_LANG + $NEW_FRAMEWORK"
-    elif [[ -n "$NEW_LANG" ]]; then
-        recent_change="- $CURRENT_BRANCH: Added $NEW_LANG"
-    elif [[ -n "$NEW_FRAMEWORK" ]]; then
-        recent_change="- $CURRENT_BRANCH: Added $NEW_FRAMEWORK"
+    if [[ -n "$escaped_lang" && -n "$escaped_framework" ]]; then
+        recent_change="- $escaped_branch: Added $escaped_lang + $escaped_framework"
+    elif [[ -n "$escaped_lang" ]]; then
+        recent_change="- $escaped_branch: Added $escaped_lang"
+    elif [[ -n "$escaped_framework" ]]; then
+        recent_change="- $escaped_branch: Added $escaped_framework"
     else
-        recent_change="- $CURRENT_BRANCH: Added"
+        recent_change="- $escaped_branch: Added"
     fi
 
-    # Render the markdown template with an awk-based replacer so multi-line blocks
-    # (Project Structure, Commands) are preserved.
-    if ! awk \
-        -v project_name="$project_name" \
-        -v current_date="$current_date" \
-        -v tech_stack="$tech_stack" \
-        -v project_structure="$project_structure" \
-        -v commands="$commands" \
-        -v language_conventions="$language_conventions" \
-        -v recent_change="$recent_change" \
-        '
-        {
-            line=$0
-            gsub(/\[PROJECT NAME\]/, project_name, line)
-            gsub(/\[DATE\]/, current_date, line)
-
-            if (line ~ /^\[EXTRACTED FROM ALL PLAN\.MD FILES\]$/) { print tech_stack; next }
-            if (line ~ /^\[ACTUAL STRUCTURE FROM PLANS\]$/) {
-                n = split(project_structure, a, /\\n/)
-                for (i = 1; i <= n; i++) print a[i]
-                next
-            }
-            if (line ~ /^\[ONLY COMMANDS FOR ACTIVE TECHNOLOGIES\]$/) {
-                n = split(commands, a, /\\n/)
-                for (i = 1; i <= n; i++) print a[i]
-                next
-            }
-            if (line ~ /^\[LANGUAGE-SPECIFIC, ONLY FOR LANGUAGES IN USE\]$/) { print language_conventions; next }
-            if (line ~ /^\[LAST 3 FEATURES AND WHAT THEY ADDED\]$/) { print recent_change; next }
-
-            print line
-        }
-        ' \
-        "$TEMPLATE_FILE" > "$temp_file"; then
-        log_error "Failed to render template via awk"
-        return 1
-    fi
-
+    local substitutions=(
+        "s|\[PROJECT NAME\]|$project_name|"
+        "s|\[DATE\]|$current_date|"
+        "s|\[EXTRACTED FROM ALL PLAN.MD FILES\]|$tech_stack|"
+        "s|\[ACTUAL STRUCTURE FROM PLANS\]|$project_structure|g"
+        "s|\[ONLY COMMANDS FOR ACTIVE TECHNOLOGIES\]|$commands|"
+        "s|\[LANGUAGE-SPECIFIC, ONLY FOR LANGUAGES IN USE\]|$language_conventions|"
+        "s|\[LAST 3 FEATURES AND WHAT THEY ADDED\]|$recent_change|"
+    )
+    
+    for substitution in "${substitutions[@]}"; do
+        if ! sed -i.bak -e "$substitution" "$temp_file"; then
+            log_error "Failed to perform substitution: $substitution"
+            rm -f "$temp_file" "$temp_file.bak"
+            return 1
+        fi
+    done
+    
+    # Convert \n sequences to actual newlines
+    newline=$(printf '\n')
+    sed -i.bak2 "s/\\\\n/${newline}/g" "$temp_file"
+    
+    # Clean up backup files
+    rm -f "$temp_file.bak" "$temp_file.bak2"
+    
     return 0
 }
 
@@ -435,15 +374,6 @@ update_existing_agent_file() {
         return 1
     }
     
-    local project_structure
-    project_structure=$(get_project_structure "$NEW_PROJECT_TYPE")
-    local commands
-    commands=$(get_commands_for_language "$NEW_LANG")
-
-    # Render any \n sequences as real newlines for output.
-    local project_structure_rendered="${project_structure//\\n/$'\n'}"
-    local commands_rendered="${commands//\\n/$'\n'}"
-
     # Process the file in one pass
     local tech_stack=$(format_technology_stack "$NEW_LANG" "$NEW_FRAMEWORK")
     local new_tech_entries=()
@@ -480,46 +410,12 @@ update_existing_agent_file() {
     # Process file line by line
     local in_tech_section=false
     local in_changes_section=false
-    local in_structure_section=false
-    local in_commands_section=false
     local tech_entries_added=false
     local changes_entries_added=false
     local existing_changes_count=0
     local file_ended=false
     
     while IFS= read -r line || [[ -n "$line" ]]; do
-        # Replace Project Structure section entirely (keep headings, refresh content).
-        if [[ "$line" =~ ^##[[:space:]]Project[[:space:]]Structure ]]; then
-            echo "$line" >> "$temp_file"
-            echo "" >> "$temp_file"
-            echo "\`\`\`text" >> "$temp_file"
-            printf '%s\n' "$project_structure_rendered" >> "$temp_file"
-            echo "\`\`\`" >> "$temp_file"
-            in_structure_section=true
-            continue
-        elif [[ $in_structure_section == true ]]; then
-            if [[ "$line" =~ ^##[[:space:]] ]]; then
-                echo "$line" >> "$temp_file"
-                in_structure_section=false
-            fi
-            continue
-        fi
-
-        # Replace Commands section entirely (keep headings, refresh content).
-        if [[ "$line" =~ ^##[[:space:]]Commands ]]; then
-            echo "$line" >> "$temp_file"
-            echo "" >> "$temp_file"
-            printf '%s\n' "$commands_rendered" >> "$temp_file"
-            in_commands_section=true
-            continue
-        elif [[ $in_commands_section == true ]]; then
-            if [[ "$line" =~ ^##[[:space:]] ]]; then
-                echo "$line" >> "$temp_file"
-                in_commands_section=false
-            fi
-            continue
-        fi
-
         # Handle Active Technologies section
         if [[ "$line" == "## Active Technologies" ]]; then
             echo "$line" >> "$temp_file"
@@ -568,7 +464,7 @@ update_existing_agent_file() {
         fi
         
         # Update timestamp
-        if [[ "$line" =~ \*\*Last\ updated\*\*:.*[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] ]] || [[ "$line" =~ Last\ updated:\ [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] ]]; then
+        if [[ "$line" =~ \*\*Last\ updated\*\*:.*[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] ]]; then
             echo "$line" | sed "s/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/$current_date/" >> "$temp_file"
         else
             echo "$line" >> "$temp_file"
