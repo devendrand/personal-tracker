@@ -107,8 +107,8 @@ description: "Task list for Remove Portfolio Navigation & Page"
 
 - [ ] T017 Run quickstart verification steps in specs/003-remove-portfolio-nav/quickstart.md (nav item absent; /portfolios redirects; tagging still works)
 - [x] T018 Map each spec edge case to a concrete automated test (edge case → test ID) in specs/003-remove-portfolio-nav/spec.md
-- [ ] T019 Sync with updated main per constitution (fetch, update main, integrate origin/main into feature branch)
-- [ ] T020 Run CI-equivalent checks before push: ./scripts/ci_local.sh
+- [x] T019 Sync with updated main per constitution (fetch, update main, integrate origin/main into feature branch)
+- [x] T020 Run CI-equivalent checks before push: ./scripts/ci_local.sh
 - [x] T021 [P] Add router history/back simulation test for /portfolios redirect consistency using Location.back() in web/src/app/app.routes.spec.ts
 - [x] T022 [P] Add dashboard regression test: dashboard still renders "Portfolios" wording/cards (explicitly out of scope to remove) in web/src/app/features/dashboard/dashboard.component.spec.ts
 - [x] T023 Confirm FR-005: no backend or Alembic migration changes for this feature (git diff should not include api/ or api/alembic/versions/)
