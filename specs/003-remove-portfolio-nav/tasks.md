@@ -105,7 +105,7 @@ description: "Task list for Remove Portfolio Navigation & Page"
 
 ## Final Phase: Polish & Cross-Cutting Concerns
 
-- [ ] T017 Run quickstart verification steps in specs/003-remove-portfolio-nav/quickstart.md (nav item absent; /portfolios redirects; tagging still works)
+- [x] T017 Run quickstart verification steps in specs/003-remove-portfolio-nav/quickstart.md (nav item absent; /portfolios redirects; tagging still works)
 - [x] T018 Map each spec edge case to a concrete automated test (edge case → test ID) in specs/003-remove-portfolio-nav/spec.md
 - [x] T019 Sync with updated main per constitution (fetch, update main, integrate origin/main into feature branch)
 - [x] T020 Run CI-equivalent checks before push: ./scripts/ci_local.sh
