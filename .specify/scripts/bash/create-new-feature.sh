@@ -4,7 +4,7 @@ set -e
 
 JSON_MODE=false
 SHORT_NAME=""
-FEATURE_NUMBER=""
+BRANCH_NUMBER=""
 ARGS=()
 i=1
 while [ $i -le $# ]; do
@@ -12,23 +12,6 @@ while [ $i -le $# ]; do
     case "$arg" in
         --json) 
             JSON_MODE=true 
-            ;;
-        --number)
-            if [ $((i + 1)) -gt $# ]; then
-                echo 'Error: --number requires a value' >&2
-                exit 1
-            fi
-            i=$((i + 1))
-            next_arg="${!i}"
-            if [[ "$next_arg" == --* ]]; then
-                echo 'Error: --number requires a value' >&2
-                exit 1
-            fi
-            if ! [[ "$next_arg" =~ ^[0-9]+$ ]] || [[ "$next_arg" -lt 1 ]]; then
-                echo 'Error: --number must be a positive integer' >&2
-                exit 1
-            fi
-            FEATURE_NUMBER="$next_arg"
             ;;
         --short-name)
             if [ $((i + 1)) -gt $# ]; then
@@ -44,18 +27,31 @@ while [ $i -le $# ]; do
             fi
             SHORT_NAME="$next_arg"
             ;;
+        --number)
+            if [ $((i + 1)) -gt $# ]; then
+                echo 'Error: --number requires a value' >&2
+                exit 1
+            fi
+            i=$((i + 1))
+            next_arg="${!i}"
+            if [[ "$next_arg" == --* ]]; then
+                echo 'Error: --number requires a value' >&2
+                exit 1
+            fi
+            BRANCH_NUMBER="$next_arg"
+            ;;
         --help|-h) 
             echo "Usage: $0 [--json] [--short-name <name>] [--number N] <feature_description>"
             echo ""
             echo "Options:"
             echo "  --json              Output in JSON format"
-            echo "  --number N          Optional: Force the numeric spec directory id (e.g., 3 -> specs/003-<short-name>/)"
             echo "  --short-name <name> Provide a custom short name (2-4 words) for the branch"
+            echo "  --number N          Specify branch number manually (overrides auto-detection)"
             echo "  --help, -h          Show this help message"
             echo ""
             echo "Examples:"
-            echo "  $0 --json --short-name 'user-auth' 'Add user authentication system'"
-            echo "  $0 --number 5 --short-name 'user-auth' 'Add user authentication system'"
+            echo "  $0 'Add user authentication system' --short-name 'user-auth'"
+            echo "  $0 'Implement OAuth2 integration for API' --number 5"
             exit 0
             ;;
         *) 
@@ -84,24 +80,73 @@ find_repo_root() {
     return 1
 }
 
-ensure_latest_main() {
-    local base_branch="main"
+# Function to get highest number from specs directory
+get_highest_from_specs() {
+    local specs_dir="$1"
+    local highest=0
+    
+    if [ -d "$specs_dir" ]; then
+        for dir in "$specs_dir"/*; do
+            [ -d "$dir" ] || continue
+            dirname=$(basename "$dir")
+            number=$(echo "$dirname" | grep -o '^[0-9]\+' || echo "0")
+            number=$((10#$number))
+            if [ "$number" -gt "$highest" ]; then
+                highest=$number
+            fi
+        done
+    fi
+    
+    echo "$highest"
+}
 
-    # Fail fast if working tree isn't clean, to avoid losing local work.
-    if [[ -n "$(git status --porcelain)" ]]; then
-        echo "Error: Working tree has uncommitted changes. Commit/stash before creating a feature branch." >&2
-        exit 1
+# Function to get highest number from git branches
+get_highest_from_branches() {
+    local highest=0
+    
+    # Get all branches (local and remote)
+    branches=$(git branch -a 2>/dev/null || echo "")
+    
+    if [ -n "$branches" ]; then
+        while IFS= read -r branch; do
+            # Clean branch name: remove leading markers and remote prefixes
+            clean_branch=$(echo "$branch" | sed 's/^[* ]*//; s|^remotes/[^/]*/||')
+            
+            # Extract feature number if branch matches pattern ###-*
+            if echo "$clean_branch" | grep -q '^[0-9]\{3\}-'; then
+                number=$(echo "$clean_branch" | grep -o '^[0-9]\{3\}' || echo "0")
+                number=$((10#$number))
+                if [ "$number" -gt "$highest" ]; then
+                    highest=$number
+                fi
+            fi
+        done <<< "$branches"
+    fi
+    
+    echo "$highest"
+}
+
+# Function to check existing branches (local and remote) and return next available number
+check_existing_branches() {
+    local specs_dir="$1"
+
+    # Fetch all remotes to get latest branch info (suppress errors if no remotes)
+    git fetch --all --prune 2>/dev/null || true
+
+    # Get highest number from ALL branches (not just matching short name)
+    local highest_branch=$(get_highest_from_branches)
+
+    # Get highest number from ALL specs (not just matching short name)
+    local highest_spec=$(get_highest_from_specs "$specs_dir")
+
+    # Take the maximum of both
+    local max_num=$highest_branch
+    if [ "$highest_spec" -gt "$max_num" ]; then
+        max_num=$highest_spec
     fi
 
-    if ! git show-ref --verify --quiet "refs/heads/$base_branch"; then
-        echo "Error: Expected base branch '$base_branch' does not exist." >&2
-        exit 1
-    fi
-
-    # Fetch + fast-forward only. This matches the constitution requirement.
-    git fetch origin "$base_branch" --prune
-    git checkout "$base_branch"
-    git pull --ff-only origin "$base_branch"
+    # Return next number
+    echo $((max_num + 1))
 }
 
 # Function to clean and format a branch name
@@ -131,26 +176,6 @@ cd "$REPO_ROOT"
 
 SPECS_DIR="$REPO_ROOT/specs"
 mkdir -p "$SPECS_DIR"
-
-# Determine the next available numeric id for specs/<id>-<short-name>/.
-next_feature_number() {
-    local specs_dir="$1"
-    local max=0
-    local d
-    shopt -s nullglob
-    for d in "$specs_dir"/[0-9][0-9][0-9]-*; do
-        [[ -d "$d" ]] || continue
-        local base
-        base="$(basename "$d")"
-        local n
-        n="${base%%-*}"
-        if [[ "$n" =~ ^[0-9]+$ ]] && [[ "$n" -gt "$max" ]]; then
-            max="$n"
-        fi
-    done
-    shopt -u nullglob
-    echo $((max + 1))
-}
 
 # Function to generate branch name with stop word filtering and length filtering
 generate_branch_name() {
@@ -209,15 +234,29 @@ else
     BRANCH_SUFFIX=$(generate_branch_name "$FEATURE_DESCRIPTION")
 fi
 
-BRANCH_NAME="feature/${BRANCH_SUFFIX}"
+# Determine branch number
+if [ -z "$BRANCH_NUMBER" ]; then
+    if [ "$HAS_GIT" = true ]; then
+        # Check existing branches on remotes
+        BRANCH_NUMBER=$(check_existing_branches "$SPECS_DIR")
+    else
+        # Fall back to local directory check
+        HIGHEST=$(get_highest_from_specs "$SPECS_DIR")
+        BRANCH_NUMBER=$((HIGHEST + 1))
+    fi
+fi
+
+# Force base-10 interpretation to prevent octal conversion (e.g., 010 → 8 in octal, but should be 10 in decimal)
+FEATURE_NUM=$(printf "%03d" "$((10#$BRANCH_NUMBER))")
+BRANCH_NAME="${FEATURE_NUM}-${BRANCH_SUFFIX}"
 
 # GitHub enforces a 244-byte limit on branch names
 # Validate and truncate if necessary
 MAX_BRANCH_LENGTH=244
 if [ ${#BRANCH_NAME} -gt $MAX_BRANCH_LENGTH ]; then
     # Calculate how much we need to trim from suffix
-    # Account for: "feature/" prefix (8 chars)
-    MAX_SUFFIX_LENGTH=$((MAX_BRANCH_LENGTH - 8))
+    # Account for: feature number (3) + hyphen (1) = 4 chars
+    MAX_SUFFIX_LENGTH=$((MAX_BRANCH_LENGTH - 4))
     
     # Truncate suffix at word boundary if possible
     TRUNCATED_SUFFIX=$(echo "$BRANCH_SUFFIX" | cut -c1-$MAX_SUFFIX_LENGTH)
@@ -225,7 +264,7 @@ if [ ${#BRANCH_NAME} -gt $MAX_BRANCH_LENGTH ]; then
     TRUNCATED_SUFFIX=$(echo "$TRUNCATED_SUFFIX" | sed 's/-$//')
     
     ORIGINAL_BRANCH_NAME="$BRANCH_NAME"
-    BRANCH_NAME="feature/${TRUNCATED_SUFFIX}"
+    BRANCH_NAME="${FEATURE_NUM}-${TRUNCATED_SUFFIX}"
     
     >&2 echo "[specify] Warning: Branch name exceeded GitHub's 244-byte limit"
     >&2 echo "[specify] Original: $ORIGINAL_BRANCH_NAME (${#ORIGINAL_BRANCH_NAME} bytes)"
@@ -233,25 +272,12 @@ if [ ${#BRANCH_NAME} -gt $MAX_BRANCH_LENGTH ]; then
 fi
 
 if [ "$HAS_GIT" = true ]; then
-    ensure_latest_main
     git checkout -b "$BRANCH_NAME"
 else
     >&2 echo "[specify] Warning: Git repository not detected; skipped branch creation for $BRANCH_NAME"
 fi
 
-if [[ -z "$FEATURE_NUMBER" ]]; then
-    FEATURE_NUMBER="$(next_feature_number "$SPECS_DIR")"
-fi
-
-FEATURE_ID=$(printf "%03d" "$FEATURE_NUMBER")
-FEATURE_DIR_NAME="${FEATURE_ID}-${BRANCH_SUFFIX}"
-FEATURE_DIR="$SPECS_DIR/$FEATURE_DIR_NAME"
-
-if [[ -d "$FEATURE_DIR" ]]; then
-    echo "Error: Spec directory already exists: $FEATURE_DIR" >&2
-    echo "Hint: omit --number to auto-assign the next id, or choose a different --number." >&2
-    exit 1
-fi
+FEATURE_DIR="$SPECS_DIR/$BRANCH_NAME"
 mkdir -p "$FEATURE_DIR"
 
 TEMPLATE="$REPO_ROOT/.specify/templates/spec-template.md"
@@ -262,9 +288,10 @@ if [ -f "$TEMPLATE" ]; then cp "$TEMPLATE" "$SPEC_FILE"; else touch "$SPEC_FILE"
 export SPECIFY_FEATURE="$BRANCH_NAME"
 
 if $JSON_MODE; then
-    printf '{"BRANCH_NAME":"%s","SPEC_FILE":"%s"}\n' "$BRANCH_NAME" "$SPEC_FILE"
+    printf '{"BRANCH_NAME":"%s","SPEC_FILE":"%s","FEATURE_NUM":"%s"}\n' "$BRANCH_NAME" "$SPEC_FILE" "$FEATURE_NUM"
 else
     echo "BRANCH_NAME: $BRANCH_NAME"
     echo "SPEC_FILE: $SPEC_FILE"
+    echo "FEATURE_NUM: $FEATURE_NUM"
     echo "SPECIFY_FEATURE environment variable set to: $BRANCH_NAME"
 fi
