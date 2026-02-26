@@ -123,3 +123,10 @@ Additional commands:
 - `/speckit.constitution` — create or update `.specify/memory/constitution.md`
 
 Artifacts live in `specs/<NNN>-<feature-name>/` (e.g. `specs/004-user-auth/`). The constitution at `.specify/memory/constitution.md` is the authoritative source for project principles.
+
+## Active Technologies
+- Python 3.12 (backend), TypeScript / Angular 19 (frontend) + FastAPI, python-jose (JWT), Angular HttpClien (004-fix-dev-auth)
+- `localStorage` (client-side token cache only) — no DB changes (004-fix-dev-auth)
+
+## Recent Changes
+- 004-fix-dev-auth: Added Python 3.12 (backend), TypeScript / Angular 19 (frontend) + FastAPI, python-jose (JWT), Angular HttpClien

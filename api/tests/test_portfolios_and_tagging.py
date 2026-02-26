@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from app.core.security import DEV_TOKEN, create_access_token
+from app.core.security import create_access_token
+
+DEV_TOKEN = create_access_token({"sub": "dev_user", "dev": True})
 
 
 def _auth_headers(token: str) -> dict[str, str]:

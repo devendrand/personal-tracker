@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from app.core.security import DEV_TOKEN, create_access_token
+from app.core.security import create_access_token
+
+DEV_TOKEN = create_access_token({"sub": "dev_user", "dev": True})
 
 
 def _auth_headers(subject: str = "dev_user") -> dict[str, str]:
-    # DEV_TOKEN encodes sub=dev_user; keep helper for readability.
-    if subject != "dev_user":
-        raise ValueError("This test helper currently only supports DEV_TOKEN")
-    return {"Authorization": f"Bearer {DEV_TOKEN}"}
+    token = DEV_TOKEN if subject == "dev_user" else create_access_token({"sub": subject})
+    return {"Authorization": f"Bearer {token}"}
 
 
 SAMPLE_CSV = """All Transactions Activity Types

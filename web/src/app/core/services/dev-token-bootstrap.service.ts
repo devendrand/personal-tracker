@@ -11,14 +11,26 @@ interface TokenResponse {
   providedIn: 'root',
 })
 export class DevTokenBootstrapService {
+  private isTokenValid(token: string): boolean {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1])) as { exp?: number };
+      return typeof payload.exp === 'number' && Date.now() < payload.exp * 1000;
+    } catch {
+      return false;
+    }
+  }
+
   async ensureDevToken(): Promise<void> {
     if (environment.production || !isDevMode()) {
       return;
     }
 
     const existing = localStorage.getItem('access_token');
-    if (existing) {
+    if (existing && this.isTokenValid(existing)) {
       return;
+    }
+    if (existing) {
+      localStorage.removeItem('access_token');
     }
 
     const candidates = Array.from(

@@ -63,7 +63,3 @@ def decode_access_token(token: str) -> dict[str, Any] | None:
         return payload
     except JWTError:
         return None
-
-
-# Development token for testing (remove in production)
-DEV_TOKEN = create_access_token({"sub": "dev_user", "dev": True})
