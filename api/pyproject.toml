@@ -22,6 +22,8 @@ dev = [
     "ruff>=0.8.0",
     "mypy>=1.13.0",
     "aiosqlite>=0.22.1",
+    "coverage>=7.13.4",
+    "pytest-cov>=7.0.0",
 ]
 
 [tool.ruff]

@@ -151,7 +151,7 @@ jobs:
         run: uv sync --dev
 
       - name: Run tests
-        run: uv run pytest -v
+        run: uv run pytest -v --cov=app --cov-branch --cov-report=term-missing --cov-fail-under=85
 
   # Summary job for branch protection status check
   ci-success:
