@@ -6,6 +6,8 @@ Auto-generated from all feature plans. Last updated: 2026-02-26
 - Python 3.12 (backend), TypeScript (frontend) + FastAPI, Pydantic, SQLAlchemy 2.0 (async), Alembic; Angular 19, Angular Material (006-strategy-type-tagging)
   
 - PostgreSQL 17 (006-strategy-type-tagging)
+- Python 3.12+ (backend), TypeScript / Angular 19+ (frontend) + FastAPI, SQLAlchemy 2.0 (async), Angular Material, PostgreSQL 17 (009-round-trip-link)
+- PostgreSQL 17 with Alembic migrations (009-round-trip-link)
 
 ## Project Structure
 
@@ -36,6 +38,7 @@ docker compose run --rm --no-deps web sh -lc "npm ci && npm run lint && npm run 
 Python 3.12+ (backend), TypeScript (strict) + Angular 19+ (frontend): Follow standard conventions
 
 ## Recent Changes
+- 009-round-trip-link: Added Python 3.12+ (backend), TypeScript / Angular 19+ (frontend) + FastAPI, SQLAlchemy 2.0 (async), Angular Material, PostgreSQL 17
 - 006-strategy-type-tagging: Added Python 3.12 (backend), TypeScript (frontend) + FastAPI, Pydantic, SQLAlchemy 2.0 (async), Alembic; Angular 19, Angular Material
 - 006-strategy-type-tagging: Added PostgreSQL 17
 

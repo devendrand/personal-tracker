@@ -34,6 +34,7 @@ def _txn_to_response(t: Transaction) -> TransactionResponse:
         amount=t.amount,
         leg_type=LegType(t.leg_type) if t.leg_type else None,
         strategy_group_id=t.strategy_group_id,
+        round_trip_group_id=t.round_trip_group_id,
         created_at=t.created_at,
     )
 

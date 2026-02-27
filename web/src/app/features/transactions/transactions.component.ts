@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
@@ -8,8 +8,13 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatDialogModule } from '@angular/material/dialog';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ApiService } from '../../core/services/api.service';
-import { LegTypeOption, StrategyGroup, Transaction } from '../../shared/models/transaction.model';
+import { LegTypeOption, RoundTripGroup, StrategyGroup, Transaction } from '../../shared/models/transaction.model';
 
 @Component({
   selector: 'app-transactions',
@@ -23,7 +28,12 @@ import { LegTypeOption, StrategyGroup, Transaction } from '../../shared/models/t
     MatProgressSpinnerModule,
     MatButtonToggleModule,
     MatFormFieldModule,
-    MatSelectModule
+    MatSelectModule,
+    MatCheckboxModule,
+    MatChipsModule,
+    MatDialogModule,
+    MatSnackBarModule,
+    MatTooltipModule,
   ],
   template: `
     <div class="transactions-container">
@@ -75,6 +85,47 @@ import { LegTypeOption, StrategyGroup, Transaction } from '../../shared/models/t
         </mat-form-field>
       </div>
 
+      <!-- Round-trip action toolbar (shown when rows are selected) -->
+      @if (selectedIds().size > 0) {
+        <mat-card class="action-bar">
+          <mat-card-content>
+            <span class="selection-count">{{ selectedIds().size }} selected</span>
+
+            @if (canLink()) {
+              <button mat-raised-button color="accent" (click)="onLinkSelected()">
+                <mat-icon>link</mat-icon>
+                Link
+              </button>
+            }
+
+            @if (canAddToGroup()) {
+              <button mat-raised-button color="accent" (click)="onAddToGroup()">
+                <mat-icon>add_link</mat-icon>
+                Add to Group
+              </button>
+            }
+
+            @if (canUngroup()) {
+              <button mat-raised-button color="warn" (click)="onUngroup()">
+                <mat-icon>link_off</mat-icon>
+                Ungroup
+              </button>
+            }
+
+            @if (canUngroupAll()) {
+              <button mat-raised-button color="warn" (click)="onUngroupAll()">
+                <mat-icon>link_off</mat-icon>
+                Ungroup All
+              </button>
+            }
+
+            <button mat-button (click)="clearSelection()">
+              Clear selection
+            </button>
+          </mat-card-content>
+        </mat-card>
+      }
+
       <mat-card>
         <mat-card-content>
           @if (loading) {
@@ -90,6 +141,26 @@ import { LegTypeOption, StrategyGroup, Transaction } from '../../shared/models/t
             </div>
           } @else {
             <table mat-table [dataSource]="transactions" class="transactions-table">
+
+              <!-- Checkbox column -->
+              <ng-container matColumnDef="select">
+                <th mat-header-cell *matHeaderCellDef>
+                  <mat-checkbox
+                    [checked]="allSelected()"
+                    [indeterminate]="someSelected()"
+                    (change)="toggleSelectAll($event.checked)"
+                    aria-label="Select all transactions"
+                  ></mat-checkbox>
+                </th>
+                <td mat-cell *matCellDef="let t">
+                  <mat-checkbox
+                    [checked]="selectedIds().has(t.id)"
+                    (change)="toggleSelect(t, $event.checked)"
+                    [aria-label]="'Select transaction ' + t.id"
+                  ></mat-checkbox>
+                </td>
+              </ng-container>
+
               <ng-container matColumnDef="date">
                 <th mat-header-cell *matHeaderCellDef>Date</th>
                 <td mat-cell *matCellDef="let t">{{ t.activity_date | date:'mediumDate' }}</td>
@@ -169,6 +240,39 @@ import { LegTypeOption, StrategyGroup, Transaction } from '../../shared/models/t
                 </td>
               </ng-container>
 
+              <!-- Round-trip group badge column -->
+              <ng-container matColumnDef="round_trip">
+                <th mat-header-cell *matHeaderCellDef>Round Trip</th>
+                <td mat-cell *matCellDef="let t">
+                  @if (t.round_trip_group_id) {
+                    <div class="group-badge-cell">
+                      <mat-chip
+                        class="group-badge"
+                        [matTooltip]="groupBadgeTooltip(t.round_trip_group_id)"
+                        (click)="toggleGroupExpansion(t.round_trip_group_id)"
+                      >
+                        <mat-icon>link</mat-icon>
+                        RT-{{ groupDisplayOrder(t.round_trip_group_id) }}
+                      </mat-chip>
+                      @if (expandedGroupId() === t.round_trip_group_id) {
+                        <div class="group-members">
+                          @for (m of groupMembers(t.round_trip_group_id); track m.id) {
+                            <div class="member-row" [class.current-member]="m.id === t.id">
+                              {{ m.activity_date | date:'shortDate' }} — {{ m.activity_type }}
+                              @if (m.amount !== null && m.amount !== undefined) {
+                                ({{ m.amount | currency }})
+                              }
+                            </div>
+                          }
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <span class="no-group">--</span>
+                  }
+                </td>
+              </ng-container>
+
               <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
               <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
             </table>
@@ -180,7 +284,7 @@ import { LegTypeOption, StrategyGroup, Transaction } from '../../shared/models/t
   styles: [`
     .transactions-container {
       padding: 24px;
-      max-width: 1200px;
+      max-width: 1400px;
       margin: 0 auto;
     }
 
@@ -248,26 +352,153 @@ import { LegTypeOption, StrategyGroup, Transaction } from '../../shared/models/t
     .summary {
       margin-bottom: 16px;
     }
+
+    .action-bar {
+      margin-bottom: 16px;
+      background-color: #e3f2fd;
+
+      mat-card-content {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        padding: 8px 16px;
+      }
+
+      .selection-count {
+        font-weight: 500;
+        color: rgba(0, 0, 0, 0.7);
+        margin-right: 8px;
+      }
+    }
+
+    .group-badge-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .group-badge {
+      cursor: pointer;
+      font-size: 12px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+
+      mat-icon {
+        font-size: 14px;
+        width: 14px;
+        height: 14px;
+      }
+    }
+
+    .group-members {
+      border-left: 2px solid #2196f3;
+      padding-left: 8px;
+      margin-top: 4px;
+      font-size: 12px;
+      color: rgba(0, 0, 0, 0.6);
+
+      .member-row {
+        padding: 2px 0;
+
+        &.current-member {
+          font-weight: 600;
+          color: rgba(0, 0, 0, 0.87);
+        }
+      }
+    }
+
+    .no-group {
+      color: rgba(0, 0, 0, 0.3);
+    }
   `]
 })
 export class TransactionsComponent implements OnInit {
   private api = inject(ApiService);
+  private snackBar = inject(MatSnackBar);
 
   transactions: Transaction[] = [];
   legTypeOptions: LegTypeOption[] = [];
   strategyGroups: StrategyGroup[] = [];
+  roundTripGroups: RoundTripGroup[] = [];
   loading = true;
   uploading = false;
   showUntaggedOnly = false;
   selectedLegType = '';
   uploadSummary: { imported: number; skipped: number; failed: number; duplicates: number } | null = null;
 
-  displayedColumns = ['date', 'symbol', 'type', 'description', 'quantity', 'price', 'amount', 'leg_type', 'strategy_group'];
+  // Signals for selection state
+  selectedIds = signal<Set<string>>(new Set());
+  expandedGroupId = signal<string | null>(null);
+
+  displayedColumns = ['select', 'date', 'symbol', 'type', 'description', 'quantity', 'price', 'amount', 'leg_type', 'strategy_group', 'round_trip'];
+
+  // ---- computed selection helpers ----
+
+  allSelected = computed(() => {
+    const sel = this.selectedIds();
+    return this.transactions.length > 0 && sel.size === this.transactions.length;
+  });
+
+  someSelected = computed(() => {
+    const sel = this.selectedIds();
+    return sel.size > 0 && sel.size < this.transactions.length;
+  });
+
+  /** True when 2+ are selected and ALL are unlinked and share the same symbol. */
+  canLink = computed(() => {
+    const sel = this.selectedIds();
+    if (sel.size < 2) return false;
+    const selected = this.transactions.filter(t => sel.has(t.id));
+    const allUnlinked = selected.every(t => t.round_trip_group_id === null);
+    const symbols = new Set(selected.map(t => t.symbol).filter(Boolean));
+    return allUnlinked && symbols.size === 1;
+  });
+
+  /**
+   * True when selection includes exactly one linked transaction (determines target group)
+   * plus one or more unlinked transactions with the same symbol.
+   */
+  canAddToGroup = computed(() => {
+    const sel = this.selectedIds();
+    if (sel.size < 2) return false;
+    const selected = this.transactions.filter(t => sel.has(t.id));
+    const linked = selected.filter(t => t.round_trip_group_id !== null);
+    const unlinked = selected.filter(t => t.round_trip_group_id === null);
+    if (linked.length !== 1 || unlinked.length < 1) return false;
+    // All selected must share the same symbol
+    const symbols = new Set(selected.map(t => t.symbol).filter(Boolean));
+    return symbols.size === 1;
+  });
+
+  /** True when at least one linked transaction is selected. */
+  canUngroup = computed(() => {
+    const sel = this.selectedIds();
+    if (sel.size === 0) return false;
+    return this.transactions.some(t => sel.has(t.id) && t.round_trip_group_id !== null);
+  });
+
+  /**
+   * True when exactly one group's transactions are ALL selected.
+   */
+  canUngroupAll = computed(() => {
+    const sel = this.selectedIds();
+    if (sel.size === 0) return false;
+    const selected = this.transactions.filter(t => sel.has(t.id));
+    const groupIds = new Set(selected.map(t => t.round_trip_group_id).filter(Boolean));
+    if (groupIds.size !== 1) return false;
+    const groupId = [...groupIds][0] as string;
+    const allGroupMembers = this.transactions.filter(t => t.round_trip_group_id === groupId);
+    return selected.length === allGroupMembers.length;
+  });
 
   ngOnInit(): void {
     this.loadLegTypes();
     this.loadStrategyGroups();
     this.loadTransactions();
+    this.loadRoundTripGroups();
   }
 
   onFilterChanged(value: string): void {
@@ -327,6 +558,13 @@ export class TransactionsComponent implements OnInit {
     });
   }
 
+  loadRoundTripGroups(): void {
+    this.api.getRoundTripGroups().subscribe({
+      next: (data) => (this.roundTripGroups = data),
+      error: (err) => console.error('Failed to load round-trip groups:', err)
+    });
+  }
+
   groupsForSymbol(symbol: string): StrategyGroup[] {
     return this.strategyGroups.filter((g) => g.symbol === symbol);
   }
@@ -353,5 +591,146 @@ export class TransactionsComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  // ---- selection ----
+
+  toggleSelect(t: Transaction, checked: boolean): void {
+    const next = new Set(this.selectedIds());
+    if (checked) {
+      next.add(t.id);
+    } else {
+      next.delete(t.id);
+    }
+    this.selectedIds.set(next);
+  }
+
+  toggleSelectAll(checked: boolean): void {
+    if (checked) {
+      this.selectedIds.set(new Set(this.transactions.map(t => t.id)));
+    } else {
+      this.selectedIds.set(new Set());
+    }
+  }
+
+  clearSelection(): void {
+    this.selectedIds.set(new Set());
+  }
+
+  // ---- round-trip actions ----
+
+  onLinkSelected(): void {
+    const ids = [...this.selectedIds()];
+    this.api.linkTransactions({ transaction_ids: ids }).subscribe({
+      next: (group) => {
+        this.snackBar.open(`Linked as Round Trip RT-${group.display_order}`, 'OK', { duration: 3000 });
+        this.clearSelection();
+        this.loadTransactions();
+        this.loadRoundTripGroups();
+      },
+      error: (err) => {
+        const msg = err?.error?.detail ?? 'Failed to link transactions';
+        this.snackBar.open(msg, 'Close', { duration: 5000 });
+      }
+    });
+  }
+
+  onAddToGroup(): void {
+    const selected = this.transactions.filter(t => this.selectedIds().has(t.id));
+    const linkedTxn = selected.find(t => t.round_trip_group_id !== null);
+    const unlinkedIds = selected
+      .filter(t => t.round_trip_group_id === null)
+      .map(t => t.id);
+
+    if (!linkedTxn?.round_trip_group_id) return;
+
+    this.api.addToRoundTripGroup(linkedTxn.round_trip_group_id, { transaction_ids: unlinkedIds }).subscribe({
+      next: (group) => {
+        this.snackBar.open(`Added to Round Trip RT-${group.display_order}`, 'OK', { duration: 3000 });
+        this.clearSelection();
+        this.loadTransactions();
+        this.loadRoundTripGroups();
+      },
+      error: (err) => {
+        const msg = err?.error?.detail ?? 'Failed to add to group';
+        this.snackBar.open(msg, 'Close', { duration: 5000 });
+      }
+    });
+  }
+
+  onUngroup(): void {
+    const selected = this.transactions.filter(t => this.selectedIds().has(t.id));
+
+    // Group linked transactions by their group_id, then remove each set
+    const byGroup = new Map<string, string[]>();
+    for (const t of selected) {
+      if (t.round_trip_group_id) {
+        const existing = byGroup.get(t.round_trip_group_id) ?? [];
+        existing.push(t.id);
+        byGroup.set(t.round_trip_group_id, existing);
+      }
+    }
+
+    let pending = byGroup.size;
+    if (pending === 0) return;
+
+    for (const [groupId, txnIds] of byGroup) {
+      this.api.removeFromRoundTripGroup(groupId, { transaction_ids: txnIds }).subscribe({
+        next: () => {
+          pending--;
+          if (pending === 0) {
+            this.snackBar.open('Ungrouped successfully', 'OK', { duration: 3000 });
+            this.clearSelection();
+            this.loadTransactions();
+            this.loadRoundTripGroups();
+          }
+        },
+        error: (err) => {
+          const msg = err?.error?.detail ?? 'Failed to ungroup';
+          this.snackBar.open(msg, 'Close', { duration: 5000 });
+        }
+      });
+    }
+  }
+
+  onUngroupAll(): void {
+    const selected = this.transactions.filter(t => this.selectedIds().has(t.id));
+    const groupId = selected.find(t => t.round_trip_group_id)?.round_trip_group_id;
+    if (!groupId) return;
+
+    this.api.deleteRoundTripGroup(groupId).subscribe({
+      next: () => {
+        this.snackBar.open('Group disbanded', 'OK', { duration: 3000 });
+        this.clearSelection();
+        this.loadTransactions();
+        this.loadRoundTripGroups();
+      },
+      error: (err) => {
+        const msg = err?.error?.detail ?? 'Failed to disband group';
+        this.snackBar.open(msg, 'Close', { duration: 5000 });
+      }
+    });
+  }
+
+  // ---- group badge helpers ----
+
+  groupDisplayOrder(groupId: string): number {
+    return this.roundTripGroups.find(g => g.id === groupId)?.display_order ?? 0;
+  }
+
+  groupBadgeTooltip(groupId: string): string {
+    const group = this.roundTripGroups.find(g => g.id === groupId);
+    if (!group) return 'Round-trip group';
+    return `RT-${group.display_order} · ${group.member_count} transactions`;
+  }
+
+  toggleGroupExpansion(groupId: string): void {
+    this.expandedGroupId.set(
+      this.expandedGroupId() === groupId ? null : groupId
+    );
+  }
+
+  groupMembers(groupId: string): Transaction[] {
+    return this.transactions.filter(t => t.round_trip_group_id === groupId);
   }
 }

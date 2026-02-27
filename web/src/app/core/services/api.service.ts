@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 import { Portfolio } from '../../shared/models/portfolio.model';
-import { LegTypeOption, StrategyGroup, StrategyGroupCreate, Transaction, TransactionUploadResponse } from '../../shared/models/transaction.model';
+import { AddToGroupRequest, LegTypeOption, LinkTransactionsRequest, RemoveFromGroupRequest, RoundTripGroup, RoundTripGroupDetail, StrategyGroup, StrategyGroupCreate, Transaction, TransactionUploadResponse } from '../../shared/models/transaction.model';
 import { PnLSummaryResponse } from '../../features/pnl/models/pnl.models';
 
 /**
@@ -113,5 +113,29 @@ export class ApiService {
 
   getPnL(): Observable<PnLSummaryResponse> {
     return this.get<PnLSummaryResponse>('/pnl');
+  }
+
+  getRoundTripGroups(): Observable<RoundTripGroup[]> {
+    return this.get<RoundTripGroup[]>('/round-trips');
+  }
+
+  getRoundTripGroup(groupId: string): Observable<RoundTripGroupDetail> {
+    return this.get<RoundTripGroupDetail>(`/round-trips/${groupId}`);
+  }
+
+  linkTransactions(body: LinkTransactionsRequest): Observable<RoundTripGroup> {
+    return this.post<RoundTripGroup>('/round-trips/link', body);
+  }
+
+  addToRoundTripGroup(groupId: string, body: AddToGroupRequest): Observable<RoundTripGroup> {
+    return this.post<RoundTripGroup>(`/round-trips/${groupId}/add`, body);
+  }
+
+  removeFromRoundTripGroup(groupId: string, body: RemoveFromGroupRequest): Observable<RoundTripGroup> {
+    return this.post<RoundTripGroup>(`/round-trips/${groupId}/remove`, body);
+  }
+
+  deleteRoundTripGroup(groupId: string): Observable<void> {
+    return this.delete<void>(`/round-trips/${groupId}`);
   }
 }

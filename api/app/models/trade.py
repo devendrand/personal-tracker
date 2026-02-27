@@ -84,6 +84,26 @@ class StrategyGroup(Base):
     )
 
 
+class RoundTripGroup(Base):
+    """Round-trip grouping for transactions."""
+
+    __tablename__ = "round_trip_group"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid_str)
+    user_sub: Mapped[str] = mapped_column(String(255), index=True, nullable=False)
+    display_order: Mapped[int] = mapped_column(nullable=False, default=0)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+    # Relationship to transactions
+    transactions: Mapped[list[Transaction]] = relationship(
+        "Transaction", back_populates="round_trip_group", passive_deletes=True
+    )
+
+
 class Transaction(Base):
     __tablename__ = "transaction"
 
@@ -128,6 +148,14 @@ class Transaction(Base):
         index=True,
     )
 
+    # Round-trip group association (unlinked is NULL)
+    round_trip_group_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey("round_trip_group.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+
     # Used for duplicate prevention across uploads.
     dedupe_key: Mapped[str] = mapped_column(String(64), nullable=False)
 
@@ -139,6 +167,9 @@ class Transaction(Base):
     import_batch: Mapped[ImportBatch] = relationship("ImportBatch", back_populates="transactions")
     strategy_group: Mapped[StrategyGroup | None] = relationship(
         "StrategyGroup", back_populates="legs"
+    )
+    round_trip_group: Mapped[RoundTripGroup | None] = relationship(
+        "RoundTripGroup", back_populates="transactions"
     )
 
 

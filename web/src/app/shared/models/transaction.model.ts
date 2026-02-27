@@ -15,7 +15,31 @@ export interface Transaction {
 
   leg_type: string | null;
   strategy_group_id: string | null;
+  round_trip_group_id: string | null;
   created_at: string;
+}
+
+export interface RoundTripGroup {
+  id: string;
+  display_order: number;
+  member_count: number;
+  created_at: string;
+}
+
+export interface RoundTripGroupDetail extends RoundTripGroup {
+  members: Transaction[];
+}
+
+export interface LinkTransactionsRequest {
+  transaction_ids: string[];
+}
+
+export interface AddToGroupRequest {
+  transaction_ids: string[];
+}
+
+export interface RemoveFromGroupRequest {
+  transaction_ids: string[];
 }
 
 export interface LegTypeOption {

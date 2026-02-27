@@ -11,6 +11,7 @@ from app.routers import (
     networth_router,
     pnl_router,
     portfolios_router,
+    round_trip_router,
     strategy_groups_router,
     swim_router,
     transactions_router,
@@ -57,6 +58,7 @@ app.include_router(pnl_router, prefix="/api")
 app.include_router(portfolios_router, prefix="/api")
 app.include_router(swim_router, prefix="/api")
 app.include_router(networth_router, prefix="/api")
+app.include_router(round_trip_router, prefix="/api")
 
 
 @app.get("/")

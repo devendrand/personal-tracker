@@ -33,6 +33,7 @@ class TransactionResponse(BaseModel):
 
     leg_type: LegType | None = None
     strategy_group_id: str | None = None
+    round_trip_group_id: str | None = None
 
     created_at: datetime
 
