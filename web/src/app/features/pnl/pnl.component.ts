@@ -38,6 +38,10 @@ import { PnLSummaryResponse } from './models/pnl.models';
                 {{ toNumber(pnl()!.total_realized_pnl) | currency }}
               </span>
             </div>
+            <div class="total-metrics">
+              <span class="metric"><strong># Trades:</strong> {{ pnl()!.total_transaction_count }}</span>
+              <span class="metric"><strong>Commission:</strong> {{ toNumber(pnl()!.total_commission) | currency }}</span>
+            </div>
           </mat-card-content>
         </mat-card>
 
@@ -54,6 +58,8 @@ import { PnLSummaryResponse } from './models/pnl.models';
                 <mat-card-title>
                   <div class="ticker-header">
                     <span class="ticker-symbol">{{ ticker.symbol }}</span>
+                    <span class="ticker-metric">{{ ticker.transaction_count }} trades</span>
+                    <span class="ticker-metric">{{ toNumber(ticker.total_commission) | currency }} comm.</span>
                     <span class="ticker-pnl" [class.positive]="isPositive(ticker.total_realized_pnl)" [class.negative]="isNegative(ticker.total_realized_pnl)">
                       {{ toNumber(ticker.total_realized_pnl) | currency }}
                     </span>
@@ -68,6 +74,8 @@ import { PnLSummaryResponse } from './models/pnl.models';
                     <div class="group-section">
                       <div class="group-header" role="button" tabindex="0" (click)="toggleGroup(ticker.symbol, group.strategy_group_id)" (keydown.enter)="toggleGroup(ticker.symbol, group.strategy_group_id)" (keydown.space)="toggleGroup(ticker.symbol, group.strategy_group_id)" style="cursor: pointer;">
                         <span class="group-name">{{ group.name }}</span>
+                        <span class="group-metric">{{ group.transaction_count }} trades</span>
+                        <span class="group-metric">{{ toNumber(group.total_commission) | currency }} comm.</span>
                         <span class="group-pnl" [class.positive]="isPositive(group.total_realized_pnl)" [class.negative]="isNegative(group.total_realized_pnl)">
                           {{ toNumber(group.total_realized_pnl) | currency }}
                         </span>
@@ -81,6 +89,7 @@ import { PnLSummaryResponse } from './models/pnl.models';
                               <th>Date</th>
                               <th>Description</th>
                               <th>Leg Type</th>
+                              <th class="amount-col">Commission</th>
                               <th class="amount-col">PnL</th>
                             </tr>
                           </thead>
@@ -90,6 +99,7 @@ import { PnLSummaryResponse } from './models/pnl.models';
                                 <td>{{ leg.activity_date | date:'mediumDate' }}</td>
                                 <td>{{ leg.description }}</td>
                                 <td><span class="leg-type-chip">{{ leg.leg_type }}</span></td>
+                                <td class="amount-col">{{ toNumber(leg.commission) | currency }}</td>
                                 <td class="amount-col" [class.positive]="isPositive(leg.realized_pnl)" [class.negative]="isNegative(leg.realized_pnl)">
                                   {{ toNumber(leg.realized_pnl) | currency }}
                                 </td>
@@ -148,6 +158,14 @@ import { PnLSummaryResponse } from './models/pnl.models';
       font-weight: 700;
     }
 
+    .total-metrics {
+      display: flex;
+      gap: 24px;
+      margin-top: 8px;
+      font-size: 14px;
+      color: rgba(0, 0, 0, 0.6);
+    }
+
     .positive { color: #2e7d32; }
     .negative { color: #c62828; }
 
@@ -186,6 +204,11 @@ import { PnLSummaryResponse } from './models/pnl.models';
       flex: 1;
     }
 
+    .ticker-metric {
+      font-size: 13px;
+      color: rgba(0, 0, 0, 0.5);
+    }
+
     .ticker-pnl {
       font-size: 18px;
       font-weight: 600;
@@ -208,6 +231,11 @@ import { PnLSummaryResponse } from './models/pnl.models';
     .group-name {
       flex: 1;
       font-weight: 500;
+    }
+
+    .group-metric {
+      font-size: 13px;
+      color: rgba(0, 0, 0, 0.5);
     }
 
     .group-pnl {

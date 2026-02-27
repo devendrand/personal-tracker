@@ -8,20 +8,28 @@ import { PnLSummaryResponse } from './models/pnl.models';
 
 const EMPTY_PNL: PnLSummaryResponse = {
   total_realized_pnl: '0.000000',
-  tickers: []
+  tickers: [],
+  total_transaction_count: 0,
+  total_commission: '0'
 };
 
 const SAMPLE_PNL: PnLSummaryResponse = {
   total_realized_pnl: '300.000000',
+  total_transaction_count: 2,
+  total_commission: '0.000000',
   tickers: [
     {
       symbol: 'AAPL',
       total_realized_pnl: '300.000000',
+      transaction_count: 2,
+      total_commission: '0.000000',
       groups: [
         {
           strategy_group_id: 'grp-1',
           name: 'AAPL Wheel Q1',
           total_realized_pnl: '300.000000',
+          transaction_count: 2,
+          total_commission: '0.000000',
           legs: [
             {
               transaction_id: 'txn-1',
@@ -30,7 +38,8 @@ const SAMPLE_PNL: PnLSummaryResponse = {
               description: 'PUT AAPL 02/27/26 180.000',
               leg_type: 'CSP',
               amount: '150.000000',
-              realized_pnl: '150.000000'
+              realized_pnl: '150.000000',
+              commission: '0.000000'
             },
             {
               transaction_id: 'txn-2',
@@ -39,7 +48,8 @@ const SAMPLE_PNL: PnLSummaryResponse = {
               description: 'PUT AAPL EXP',
               leg_type: 'CSP',
               amount: '0.000000',
-              realized_pnl: '0.000000'
+              realized_pnl: '0.000000',
+              commission: '0.000000'
             }
           ]
         }
