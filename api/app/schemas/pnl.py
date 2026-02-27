@@ -18,6 +18,7 @@ class LegPnL(BaseModel):
     leg_type: LegType
     amount: Decimal
     realized_pnl: Decimal
+    commission: Decimal
 
 
 class StrategyGroupPnL(BaseModel):
@@ -25,14 +26,20 @@ class StrategyGroupPnL(BaseModel):
     name: str
     total_realized_pnl: Decimal
     legs: list[LegPnL]
+    transaction_count: int
+    total_commission: Decimal
 
 
 class TickerPnL(BaseModel):
     symbol: str
     total_realized_pnl: Decimal
     groups: list[StrategyGroupPnL]
+    transaction_count: int
+    total_commission: Decimal
 
 
 class PnLSummaryResponse(BaseModel):
     total_realized_pnl: Decimal
     tickers: list[TickerPnL]
+    total_transaction_count: int
+    total_commission: Decimal

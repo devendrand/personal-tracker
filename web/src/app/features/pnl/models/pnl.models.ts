@@ -10,6 +10,7 @@ export interface LegPnL {
   leg_type: string;
   amount: string;       // Decimal serialized as string
   realized_pnl: string; // Decimal serialized as string
+  commission: string;   // Decimal serialized as string, absolute value
 }
 
 export interface StrategyGroupPnL {
@@ -17,15 +18,21 @@ export interface StrategyGroupPnL {
   name: string;
   total_realized_pnl: string;
   legs: LegPnL[];
+  transaction_count: number;
+  total_commission: string;
 }
 
 export interface TickerPnL {
   symbol: string;
   total_realized_pnl: string;
   groups: StrategyGroupPnL[];
+  transaction_count: number;
+  total_commission: string;
 }
 
 export interface PnLSummaryResponse {
   total_realized_pnl: string;
   tickers: TickerPnL[];
+  total_transaction_count: number;
+  total_commission: string;
 }

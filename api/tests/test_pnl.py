@@ -100,6 +100,8 @@ async def test_pnl_no_tagged_transactions(client: AsyncClient) -> None:
     assert resp.status_code == 200
     body = resp.json()
     assert body["total_realized_pnl"] == "0"
+    assert body["total_transaction_count"] == 0
+    assert Decimal(body["total_commission"]) == Decimal("0")
     assert body["tickers"] == []
 
 
@@ -142,6 +144,13 @@ async def test_pnl_csp_open_plus_expiration(client: AsyncClient) -> None:
     assert groups[0]["name"] == "AAPL CSP Feb"
     assert Decimal(groups[0]["total_realized_pnl"]) == Decimal("150.00")
     assert len(groups[0]["legs"]) == 2
+    # US2: new metric fields
+    assert groups[0]["transaction_count"] == 2
+    assert Decimal(groups[0]["total_commission"]) == Decimal("0")
+    assert tickers[0]["transaction_count"] == 2
+    assert Decimal(tickers[0]["total_commission"]) == Decimal("0")
+    assert body["total_transaction_count"] == 2
+    assert Decimal(body["total_commission"]) == Decimal("0")
 
 
 @pytest.mark.anyio
@@ -168,6 +177,11 @@ async def test_pnl_csp_open_plus_btc(client: AsyncClient) -> None:
     # AAPL group: 150 + (-50) = 100; MSFT is untagged so excluded
     ticker = next(t for t in body["tickers"] if t["symbol"] == "AAPL")
     assert Decimal(ticker["total_realized_pnl"]) == Decimal("100.00")
+    # US2: new metric fields
+    assert ticker["transaction_count"] == 2
+    assert Decimal(ticker["total_commission"]) == Decimal("0")
+    assert body["total_transaction_count"] == 2
+    assert Decimal(body["total_commission"]) == Decimal("0")
 
 
 @pytest.mark.anyio
@@ -192,6 +206,13 @@ async def test_pnl_equity_buy_sell(client: AsyncClient) -> None:
     ticker = body["tickers"][0]
     assert ticker["symbol"] == "AAPL"
     assert Decimal(ticker["groups"][0]["total_realized_pnl"]) == Decimal("200.00")
+    # US2: new metric fields
+    assert ticker["groups"][0]["transaction_count"] == 2
+    assert Decimal(ticker["groups"][0]["total_commission"]) == Decimal("0")
+    assert ticker["transaction_count"] == 2
+    assert Decimal(ticker["total_commission"]) == Decimal("0")
+    assert body["total_transaction_count"] == 2
+    assert Decimal(body["total_commission"]) == Decimal("0")
 
 
 @pytest.mark.anyio
@@ -210,6 +231,9 @@ async def test_pnl_untagged_legs_excluded(client: AsyncClient) -> None:
     assert "MSFT" not in symbols
     assert "AAPL" in symbols
     assert Decimal(body["total_realized_pnl"]) == Decimal("150.00")
+    # US2: new metric fields
+    assert body["total_transaction_count"] == 1
+    assert Decimal(body["total_commission"]) == Decimal("0")
 
 
 @pytest.mark.anyio
@@ -232,6 +256,13 @@ async def test_pnl_ungrouped_tagged_legs(client: AsyncClient) -> None:
     assert ungrouped["name"] == "Ungrouped"
     assert len(ungrouped["legs"]) == 1
     assert Decimal(ungrouped["total_realized_pnl"]) == Decimal("150.00")
+    # US2: new metric fields
+    assert ungrouped["transaction_count"] == 1
+    assert Decimal(ungrouped["total_commission"]) == Decimal("0")
+    assert ticker["transaction_count"] == 1
+    assert Decimal(ticker["total_commission"]) == Decimal("0")
+    assert body["total_transaction_count"] == 1
+    assert Decimal(body["total_commission"]) == Decimal("0")
 
 
 @pytest.mark.anyio
@@ -259,6 +290,189 @@ async def test_pnl_mixed_wheel_group(client: AsyncClient) -> None:
 
     assert Decimal(body["total_realized_pnl"]) == Decimal("350.00")  # 150 + 200
     assert len(body["tickers"]) == 2
+    # US2: new metric fields
+    assert body["total_transaction_count"] == 2
+    assert Decimal(body["total_commission"]) == Decimal("0")
+
+
+# CSV with non-zero commission for US1 tests
+COMMISSION_CSV = f"""{_H}
+02/18/26,02/18/26,02/19/26,Sold Short,PUT  AAPL   02/27/26   180.000 COMM,AAPL,--,-1.0,1.50,150.00,-0.65,--,--
+02/27/26,02/27/26,02/28/26,Expired,PUT  AAPL   02/27/26   180.000 EXP COMM,AAPL,--,1.0,0.00,0.00,0.00,--,--
+"""
+
+# CSV with null commission (omitted → parsed as None)
+NULL_COMMISSION_CSV = f"""{_H}
+02/18/26,02/18/26,02/19/26,Sold Short,PUT  AAPL   02/27/26   180.000 NULLCOMM,AAPL,--,-1.0,1.50,150.00,,--,--
+"""
+
+
+@pytest.mark.anyio
+async def test_pnl_commission_deducted(client: AsyncClient) -> None:
+    """US1: Commission is deducted from realized_pnl. amount=150, commission=-0.65 → pnl=149.35."""
+    txns = await _upload(client, COMMISSION_CSV)
+    aapl_open = next(
+        t for t in txns if "COMM" in t["description"] and Decimal(t["amount"]) == Decimal("150.00")
+    )
+    aapl_expire = next(t for t in txns if "EXP COMM" in t["description"])
+
+    await _tag(client, aapl_open["id"], "CSP")
+    await _tag(client, aapl_expire["id"], "CSP")
+
+    group_id = await _create_group(client, "AAPL CSP Commission", "AAPL")
+    await _assign(client, aapl_open["id"], group_id)
+    await _assign(client, aapl_expire["id"], group_id)
+
+    resp = await client.get("/api/pnl", headers=_auth())
+    assert resp.status_code == 200
+    body = resp.json()
+
+    ticker = next(t for t in body["tickers"] if t["symbol"] == "AAPL")
+    group = ticker["groups"][0]
+    legs = group["legs"]
+
+    open_leg = next(lg for lg in legs if Decimal(lg["amount"]) == Decimal("150.00"))
+    assert Decimal(open_leg["realized_pnl"]) == Decimal("149.35")
+
+    expire_leg = next(lg for lg in legs if Decimal(lg["amount"]) == Decimal("0.00"))
+    assert Decimal(expire_leg["realized_pnl"]) == Decimal("0.00")
+
+    assert Decimal(group["total_realized_pnl"]) == Decimal("149.35")
+    assert Decimal(body["total_realized_pnl"]) == Decimal("149.35")
+
+
+@pytest.mark.anyio
+async def test_pnl_null_commission_treated_as_zero(client: AsyncClient) -> None:
+    """US1: Null commission treated as zero — realized_pnl equals amount."""
+    txns = await _upload(client, NULL_COMMISSION_CSV)
+    txn = next(t for t in txns if "NULLCOMM" in t["description"])
+
+    await _tag(client, txn["id"], "CSP")
+
+    resp = await client.get("/api/pnl", headers=_auth())
+    assert resp.status_code == 200
+    body = resp.json()
+
+    ticker = next(t for t in body["tickers"] if t["symbol"] == "AAPL")
+    leg = ticker["groups"][0]["legs"][0]
+    assert Decimal(leg["realized_pnl"]) == Decimal("150.00")
+
+
+@pytest.mark.anyio
+async def test_pnl_commission_displayed_as_positive(client: AsyncClient) -> None:
+    """US1: Commission stored as -0.65 is returned as positive 0.65 in the API."""
+    txns = await _upload(client, COMMISSION_CSV)
+    aapl_open = next(
+        t for t in txns if "COMM" in t["description"] and Decimal(t["amount"]) == Decimal("150.00")
+    )
+    aapl_expire = next(t for t in txns if "EXP COMM" in t["description"])
+
+    await _tag(client, aapl_open["id"], "CSP")
+    await _tag(client, aapl_expire["id"], "CSP")
+
+    group_id = await _create_group(client, "AAPL Comm Display", "AAPL")
+    await _assign(client, aapl_open["id"], group_id)
+    await _assign(client, aapl_expire["id"], group_id)
+
+    resp = await client.get("/api/pnl", headers=_auth())
+    assert resp.status_code == 200
+    body = resp.json()
+
+    ticker = next(t for t in body["tickers"] if t["symbol"] == "AAPL")
+    legs = ticker["groups"][0]["legs"]
+
+    open_leg = next(lg for lg in legs if Decimal(lg["amount"]) == Decimal("150.00"))
+    assert Decimal(open_leg["commission"]) == Decimal("0.65")
+
+    expire_leg = next(lg for lg in legs if Decimal(lg["amount"]) == Decimal("0.00"))
+    assert Decimal(expire_leg["commission"]) == Decimal("0.00")
+
+
+# CSV with 3 legs for US2 aggregation tests — two with commission, one without
+MULTI_LEG_COMMISSION_CSV = f"""{_H}
+02/18/26,02/18/26,02/19/26,Sold Short,PUT  AAPL   02/27/26   180.000 ML1,AAPL,--,-1.0,1.50,150.00,-0.65,--,--
+02/19/26,02/19/26,02/20/26,Sold Short,PUT  AAPL   03/06/26   185.000 ML2,AAPL,--,-1.0,1.00,100.00,-0.65,--,--
+02/27/26,02/27/26,02/28/26,Expired,PUT  AAPL   02/27/26   180.000 EXP ML3,AAPL,--,1.0,0.00,0.00,0.00,--,--
+"""
+
+
+@pytest.mark.anyio
+async def test_pnl_group_transaction_count(client: AsyncClient) -> None:
+    """US2: Group with 3 legs reports transaction_count=3."""
+    txns = await _upload(client, MULTI_LEG_COMMISSION_CSV)
+    ids = [t["id"] for t in txns if t["symbol"] == "AAPL"]
+
+    group_id = await _create_group(client, "AAPL Count Test", "AAPL")
+    for tid in ids:
+        await _tag(client, tid, "CSP")
+        await _assign(client, tid, group_id)
+
+    resp = await client.get("/api/pnl", headers=_auth())
+    assert resp.status_code == 200
+    body = resp.json()
+
+    ticker = next(t for t in body["tickers"] if t["symbol"] == "AAPL")
+    group = ticker["groups"][0]
+    assert group["transaction_count"] == 3
+
+
+@pytest.mark.anyio
+async def test_pnl_total_commission_aggregation(client: AsyncClient) -> None:
+    """US2: Group commissions -0.65, -0.65, 0.00 → total_commission=1.30."""
+    txns = await _upload(client, MULTI_LEG_COMMISSION_CSV)
+    ids = [t["id"] for t in txns if t["symbol"] == "AAPL"]
+
+    group_id = await _create_group(client, "AAPL Comm Agg", "AAPL")
+    for tid in ids:
+        await _tag(client, tid, "CSP")
+        await _assign(client, tid, group_id)
+
+    resp = await client.get("/api/pnl", headers=_auth())
+    assert resp.status_code == 200
+    body = resp.json()
+
+    ticker = next(t for t in body["tickers"] if t["symbol"] == "AAPL")
+    group = ticker["groups"][0]
+    assert Decimal(group["total_commission"]) == Decimal("1.30")
+
+
+@pytest.mark.anyio
+async def test_pnl_ticker_rollup(client: AsyncClient) -> None:
+    """US2: Ticker sums group counts and commissions."""
+    txns = await _upload(client, MULTI_LEG_COMMISSION_CSV)
+    ids = [t["id"] for t in txns if t["symbol"] == "AAPL"]
+
+    group_id = await _create_group(client, "AAPL Ticker Rollup", "AAPL")
+    for tid in ids:
+        await _tag(client, tid, "CSP")
+        await _assign(client, tid, group_id)
+
+    resp = await client.get("/api/pnl", headers=_auth())
+    assert resp.status_code == 200
+    body = resp.json()
+
+    ticker = next(t for t in body["tickers"] if t["symbol"] == "AAPL")
+    assert ticker["transaction_count"] == 3
+    assert Decimal(ticker["total_commission"]) == Decimal("1.30")
+
+
+@pytest.mark.anyio
+async def test_pnl_grand_total_fields(client: AsyncClient) -> None:
+    """US2: PnLSummaryResponse has correct total_transaction_count and total_commission."""
+    txns = await _upload(client, MULTI_LEG_COMMISSION_CSV)
+    ids = [t["id"] for t in txns if t["symbol"] == "AAPL"]
+
+    group_id = await _create_group(client, "AAPL Grand Total", "AAPL")
+    for tid in ids:
+        await _tag(client, tid, "CSP")
+        await _assign(client, tid, group_id)
+
+    resp = await client.get("/api/pnl", headers=_auth())
+    assert resp.status_code == 200
+    body = resp.json()
+
+    assert body["total_transaction_count"] == 3
+    assert Decimal(body["total_commission"]) == Decimal("1.30")
 
 
 @pytest.mark.anyio
@@ -275,3 +489,6 @@ async def test_pnl_user_scoping(client: AsyncClient) -> None:
     body = resp.json()
     assert body["tickers"] == []
     assert Decimal(body["total_realized_pnl"]) == Decimal("0")
+    # US2: new metric fields
+    assert body["total_transaction_count"] == 0
+    assert Decimal(body["total_commission"]) == Decimal("0")
