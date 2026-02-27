@@ -1,8 +1,13 @@
 from __future__ import annotations
 
-import sqlalchemy as sa
 import pytest
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
+import sqlalchemy as sa
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
 from app.db import session as session_module
 from app.models import Base
@@ -27,15 +32,15 @@ async def test_get_async_session_commits_and_closes(tmp_path, monkeypatch):
         original_commit = db.commit
         original_close = db.close
 
-        async def commit_spy() -> None:
+        async def commit_spy(*, _original_commit=original_commit) -> None:
             nonlocal commit_called
             commit_called = True
-            await original_commit()
+            await _original_commit()
 
-        async def close_spy() -> None:
+        async def close_spy(*, _original_close=original_close) -> None:
             nonlocal close_called
             close_called = True
-            await original_close()
+            await _original_close()
 
         db.commit = commit_spy  # type: ignore[method-assign]
         db.close = close_spy  # type: ignore[method-assign]
