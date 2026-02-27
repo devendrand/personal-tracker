@@ -11,7 +11,7 @@ echo "==> Backend: ruff + mypy + pytest"
   uv run ruff check .
   uv run ruff format --check .
   uv run mypy app --ignore-missing-imports
-  uv run pytest
+  uv run pytest --cov=app --cov-branch --cov-report=term-missing --cov-fail-under=85
 )
 
 echo "==> Frontend (Docker): npm ci + lint + production build"
