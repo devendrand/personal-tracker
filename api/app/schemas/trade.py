@@ -7,7 +7,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel
 
-from app.models.trade import StrategyType
+from app.models.trade import LegType
 
 
 class ImportSummary(BaseModel):
@@ -31,7 +31,8 @@ class TransactionResponse(BaseModel):
     price: Decimal | None = None
     amount: Decimal | None = None
 
-    strategy_type: StrategyType | None = None
+    leg_type: LegType | None = None
+    strategy_group_id: str | None = None
 
     created_at: datetime
 
@@ -46,15 +47,11 @@ class PortfolioResponse(BaseModel):
     created_at: datetime
 
 
-class TransactionTagRequest(BaseModel):
-    portfolio_id: str
+class LegTypePatchRequest(BaseModel):
+    leg_type: LegType | None
 
 
-class TransactionStrategyTypePatchRequest(BaseModel):
-    strategy_type: StrategyType | None
-
-
-class StrategyTypeOption(BaseModel):
-    value: StrategyType
+class LegTypeOption(BaseModel):
+    value: LegType
     label: str
     description: str

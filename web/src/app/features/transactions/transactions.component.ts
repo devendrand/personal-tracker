@@ -9,13 +9,7 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { ApiService } from '../../core/services/api.service';
-import { Transaction } from '../../shared/models/transaction.model';
-
-interface StrategyTypeOption {
-  value: string;
-  label: string;
-  description: string;
-}
+import { LegTypeOption, StrategyGroup, Transaction } from '../../shared/models/transaction.model';
 
 @Component({
   selector: 'app-transactions',
@@ -58,23 +52,23 @@ interface StrategyTypeOption {
 
       <div class="filters">
         <mat-button-toggle-group
-          [value]="showUnassignedOnly ? 'unassigned' : 'all'"
+          [value]="showUntaggedOnly ? 'untagged' : 'all'"
           (change)="onFilterChanged($event.value)"
           aria-label="Transaction filter"
         >
           <mat-button-toggle value="all">All</mat-button-toggle>
-          <mat-button-toggle value="unassigned">Untagged</mat-button-toggle>
+          <mat-button-toggle value="untagged">Untagged</mat-button-toggle>
         </mat-button-toggle-group>
 
         <mat-form-field appearance="fill" style="width: 220px; margin-left: 12px;">
           <mat-select
-            [disabled]="showUnassignedOnly"
-            [value]="selectedStrategyType"
-            (selectionChange)="onStrategyFilterSelected($event.value)"
-            placeholder="All strategies"
+            [disabled]="showUntaggedOnly"
+            [value]="selectedLegType"
+            (selectionChange)="onLegTypeFilterSelected($event.value)"
+            placeholder="All leg types"
           >
-            <mat-option value="">All strategies</mat-option>
-            @for (opt of strategyTypeOptions; track opt.value) {
+            <mat-option value="">All leg types</mat-option>
+            @for (opt of legTypeOptions; track opt.value) {
               <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
             }
           </mat-select>
@@ -131,21 +125,43 @@ interface StrategyTypeOption {
                 <td mat-cell *matCellDef="let t">{{ (t.amount !== null && t.amount !== undefined) ? (t.amount | currency) : '--' }}</td>
               </ng-container>
 
-              <ng-container matColumnDef="strategy_type">
-                <th mat-header-cell *matHeaderCellDef>Strategy Type</th>
+              <ng-container matColumnDef="leg_type">
+                <th mat-header-cell *matHeaderCellDef>Leg Type</th>
                 <td mat-cell *matCellDef="let t">
-                  @if (strategyTypeOptions.length === 0) {
+                  @if (legTypeOptions.length === 0) {
                     <span>--</span>
                   } @else {
-                    <mat-form-field appearance="fill" style="width: 220px;">
+                    <mat-form-field appearance="fill" style="width: 180px;">
                       <mat-select
-                        [value]="t.strategy_type ?? ''"
-                        (selectionChange)="onStrategyTypeSelected(t, $event.value)"
+                        [value]="t.leg_type ?? ''"
+                        (selectionChange)="onLegTypeSelected(t, $event.value)"
                         placeholder="Untagged"
                       >
                         <mat-option value="">Untagged</mat-option>
-                        @for (opt of strategyTypeOptions; track opt.value) {
+                        @for (opt of legTypeOptions; track opt.value) {
                           <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                        }
+                      </mat-select>
+                    </mat-form-field>
+                  }
+                </td>
+              </ng-container>
+
+              <ng-container matColumnDef="strategy_group">
+                <th mat-header-cell *matHeaderCellDef>Strategy Group</th>
+                <td mat-cell *matCellDef="let t">
+                  @if (!t.symbol) {
+                    <span>--</span>
+                  } @else {
+                    <mat-form-field appearance="fill" style="width: 200px;">
+                      <mat-select
+                        [value]="t.strategy_group_id ?? ''"
+                        (selectionChange)="onStrategyGroupSelected(t, $event.value)"
+                        placeholder="Ungrouped"
+                      >
+                        <mat-option value="">Ungrouped</mat-option>
+                        @for (g of groupsForSymbol(t.symbol); track g.id) {
+                          <mat-option [value]="g.id">{{ g.name }}</mat-option>
                         }
                       </mat-select>
                     </mat-form-field>
@@ -238,24 +254,26 @@ export class TransactionsComponent implements OnInit {
   private api = inject(ApiService);
 
   transactions: Transaction[] = [];
-  strategyTypeOptions: StrategyTypeOption[] = [];
+  legTypeOptions: LegTypeOption[] = [];
+  strategyGroups: StrategyGroup[] = [];
   loading = true;
   uploading = false;
-  showUnassignedOnly = false;
-  selectedStrategyType = '';
+  showUntaggedOnly = false;
+  selectedLegType = '';
   uploadSummary: { imported: number; skipped: number; failed: number; duplicates: number } | null = null;
 
-  displayedColumns = ['date', 'symbol', 'type', 'description', 'quantity', 'price', 'amount', 'strategy_type'];
+  displayedColumns = ['date', 'symbol', 'type', 'description', 'quantity', 'price', 'amount', 'leg_type', 'strategy_group'];
 
   ngOnInit(): void {
-    this.loadStrategyTypes();
+    this.loadLegTypes();
+    this.loadStrategyGroups();
     this.loadTransactions();
   }
 
   onFilterChanged(value: string): void {
-    this.showUnassignedOnly = value === 'unassigned';
-    if (this.showUnassignedOnly) {
-      this.selectedStrategyType = '';
+    this.showUntaggedOnly = value === 'untagged';
+    if (this.showUntaggedOnly) {
+      this.selectedLegType = '';
     }
     this.loadTransactions();
   }
@@ -282,31 +300,50 @@ export class TransactionsComponent implements OnInit {
     input.value = '';
   }
 
-  onStrategyFilterSelected(strategyType: string): void {
-    this.selectedStrategyType = strategyType;
+  onLegTypeFilterSelected(legType: string): void {
+    this.selectedLegType = legType;
     this.loadTransactions();
   }
 
-  onStrategyTypeSelected(t: Transaction, strategyType: string): void {
-    const value = strategyType || null;
-    this.api.setTransactionStrategyType(t.id, value).subscribe({
+  onLegTypeSelected(t: Transaction, legType: string): void {
+    const value = legType || null;
+    this.api.patchLegType(t.id, value).subscribe({
       next: () => this.loadTransactions(),
-      error: (err) => console.error('Tagging failed:', err)
+      error: (err) => console.error('Leg type tagging failed:', err)
     });
   }
 
-  loadStrategyTypes(): void {
-    this.api.getStrategyTypes().subscribe({
-      next: (data) => (this.strategyTypeOptions = data),
-      error: (err) => console.error('Failed to load strategy types:', err)
+  loadLegTypes(): void {
+    this.api.getLegTypes().subscribe({
+      next: (data) => (this.legTypeOptions = data),
+      error: (err) => console.error('Failed to load leg types:', err)
+    });
+  }
+
+  loadStrategyGroups(): void {
+    this.api.getStrategyGroups().subscribe({
+      next: (data) => (this.strategyGroups = data),
+      error: (err) => console.error('Failed to load strategy groups:', err)
+    });
+  }
+
+  groupsForSymbol(symbol: string): StrategyGroup[] {
+    return this.strategyGroups.filter((g) => g.symbol === symbol);
+  }
+
+  onStrategyGroupSelected(t: Transaction, groupId: string): void {
+    const value = groupId || null;
+    this.api.patchStrategyGroup(t.id, value).subscribe({
+      next: () => this.loadTransactions(),
+      error: (err) => console.error('Strategy group assignment failed:', err)
     });
   }
 
   loadTransactions(): void {
     this.loading = true;
-    const tagged = this.showUnassignedOnly ? false : undefined;
-    const strategy_type = this.selectedStrategyType || undefined;
-    this.api.getTransactions({ tagged, strategy_type }).subscribe({
+    const tagged = this.showUntaggedOnly ? false : undefined;
+    const leg_type = this.selectedLegType || undefined;
+    this.api.getTransactions({ tagged, leg_type }).subscribe({
       next: (data) => {
         this.transactions = data;
         this.loading = false;

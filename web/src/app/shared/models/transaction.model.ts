@@ -13,8 +13,15 @@ export interface Transaction {
   price?: number | null;
   amount?: number | null;
 
-  strategy_type: string | null;
+  leg_type: string | null;
+  strategy_group_id: string | null;
   created_at: string;
+}
+
+export interface LegTypeOption {
+  value: string;
+  label: string;
+  description: string;
 }
 
 export interface TransactionUploadResponse {
@@ -23,4 +30,16 @@ export interface TransactionUploadResponse {
   failed: number;
   duplicates: number;
   unassigned: number;
+}
+
+export interface StrategyGroup {
+  id: string;
+  name: string;
+  symbol: string;
+  created_at: string;
+}
+
+export interface StrategyGroupCreate {
+  name: string;
+  symbol: string;
 }
