@@ -17,7 +17,7 @@ echo "==> Backend: ruff + mypy + pytest"
 echo "==> Frontend (Docker): npm ci + lint + production build"
 (
   cd "${REPO_ROOT}"
-  docker compose run --rm --no-deps web sh -lc "npm ci && npm run lint && npm run build -- --configuration=production"
+  docker compose run --rm --no-deps web sh -lc "npm ci && npm run lint && npm test -- --watch=false --code-coverage --browsers=ChromeHeadlessNoSandbox && npm run build -- --configuration=production"
 )
 
 echo "==> CI-equivalent checks PASSED" 

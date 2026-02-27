@@ -110,6 +110,29 @@ jobs:
       - name: Build production
         run: npm run build -- --configuration=production
 
+  test-frontend:
+    name: Test Frontend
+    runs-on: ubuntu-latest
+    needs: build-frontend
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests (with coverage)
+        run: npm test -- --watch=false --code-coverage --browsers=ChromeHeadlessNoSandbox
+
   test-backend:
     name: Test Backend
     runs-on: ubuntu-latest
@@ -157,7 +180,7 @@ jobs:
   ci-success:
     name: CI Success
     runs-on: ubuntu-latest
-    needs: [lint-backend, lint-frontend, build-backend, build-frontend, test-backend]
+    needs: [lint-backend, lint-frontend, build-backend, build-frontend, test-backend, test-frontend]
     if: always()
     steps:
       - name: Check all jobs passed
@@ -166,7 +189,8 @@ jobs:
              [[ "${{ needs.lint-frontend.result }}" != "success" ]] || \
              [[ "${{ needs.build-backend.result }}" != "success" ]] || \
              [[ "${{ needs.build-frontend.result }}" != "success" ]] || \
-             [[ "${{ needs.test-backend.result }}" != "success" ]]; then
+             [[ "${{ needs.test-backend.result }}" != "success" ]] || \
+             [[ "${{ needs.test-frontend.result }}" != "success" ]]; then
             echo "One or more jobs failed"
             exit 1
           fi

@@ -22,7 +22,15 @@ module.exports = function (config) {
     coverageReporter: {
       dir: require('path').join(__dirname, './coverage/trade-tracker-web'),
       subdir: '.',
-      reporters: [{ type: 'html' }, { type: 'text-summary' }]
+      reporters: [{ type: 'html' }, { type: 'text-summary' }, { type: 'json-summary' }],
+      check: {
+        global: {
+          statements: 55,
+          branches: 60,
+          functions: 25,
+          lines: 55
+        }
+      }
     },
     reporters: ['progress', 'kjhtml'],
     port: 9876,
