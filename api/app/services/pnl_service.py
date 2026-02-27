@@ -43,6 +43,7 @@ def calculate_pnl(transactions: list[Transaction]) -> PnLSummaryResponse:
             leg_pnls: list[LegPnL] = []
 
             for txn in legs:
+                assert txn.leg_type is not None  # guaranteed by tagged filter above
                 amount = Decimal(str(txn.amount)) if txn.amount is not None else Decimal("0")
                 leg_pnls.append(
                     LegPnL(

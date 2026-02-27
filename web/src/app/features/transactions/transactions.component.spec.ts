@@ -7,7 +7,7 @@ import { ApiService } from '../../core/services/api.service';
 import { Transaction } from '../../shared/models/transaction.model';
 import { TransactionsComponent } from './transactions.component';
 
-describe('TransactionsComponent (strategy type tagging)', () => {
+describe('TransactionsComponent (leg type tagging)', () => {
   let fixture: ComponentFixture<TransactionsComponent>;
   let component: TransactionsComponent;
   let api: jasmine.SpyObj<ApiService>;
@@ -15,18 +15,18 @@ describe('TransactionsComponent (strategy type tagging)', () => {
   beforeEach(async () => {
     api = jasmine.createSpyObj<ApiService>('ApiService', [
       'getTransactions',
-      'getStrategyTypes',
-      'setTransactionStrategyType',
+      'getLegTypes',
+      'patchLegType',
+      'getStrategyGroups',
       'uploadTransactionsCsv'
     ]);
 
-    api.getStrategyTypes.and.returnValue(
+    api.getLegTypes.and.returnValue(
       of([
-        {
-          value: 'WHEEL',
-          label: 'Wheel',
-          description: 'Sell CSPs, take assignment, then sell covered calls.'
-        }
+        { value: 'CSP', label: 'CSP', description: 'Cash-Secured Put' },
+        { value: 'CC',  label: 'CC',  description: 'Covered Call' },
+        { value: 'BUY', label: 'BUY', description: 'Stock purchase' },
+        { value: 'SELL', label: 'SELL', description: 'Stock sale' }
       ])
     );
 
@@ -35,32 +35,36 @@ describe('TransactionsComponent (strategy type tagging)', () => {
         {
           id: 't1',
           activity_date: '2026-01-15',
-          activity_type: 'BUY',
-          description: 'Test transaction',
+          activity_type: 'Sold Short',
+          description: 'PUT AAPL 02/27/26 180.000',
           symbol: 'AAPL',
           quantity: 1,
-          price: 100,
-          amount: 100,
-          strategy_type: null,
+          price: 1.50,
+          amount: 150,
+          leg_type: null,
+          strategy_group_id: null,
           created_at: '2026-01-15T00:00:00Z'
         }
       ])
     );
 
+    api.getStrategyGroups.and.returnValue(of([]));
+
     const taggedTransaction: Transaction = {
       id: 't1',
       activity_date: '2026-01-15',
-      activity_type: 'BUY',
-      description: 'Test transaction',
+      activity_type: 'Sold Short',
+      description: 'PUT AAPL 02/27/26 180.000',
       symbol: 'AAPL',
       quantity: 1,
-      price: 100,
-      amount: 100,
-      strategy_type: 'WHEEL',
+      price: 1.50,
+      amount: 150,
+      leg_type: 'CSP',
+      strategy_group_id: null,
       created_at: '2026-01-15T00:00:00Z'
     };
 
-    api.setTransactionStrategyType.and.returnValue(of(taggedTransaction));
+    api.patchLegType.and.returnValue(of(taggedTransaction));
 
     await TestBed.configureTestingModule({
       imports: [TransactionsComponent, NoopAnimationsModule],
@@ -71,13 +75,13 @@ describe('TransactionsComponent (strategy type tagging)', () => {
     component = fixture.componentInstance;
   });
 
-  it('renders a portfolio mat-select when portfolios exist', fakeAsync(() => {
+  it('renders a mat-select when leg type options exist', fakeAsync(() => {
     fixture.detectChanges();
     tick();
     fixture.detectChanges();
 
     const selectDebug = fixture.debugElement.query(By.css('mat-select'));
-    expect(selectDebug).withContext('Expected a mat-select for Strategy Type').toBeTruthy();
+    expect(selectDebug).withContext('Expected a mat-select for Leg Type filter').toBeTruthy();
   }));
 
   it('renders an "Untagged" filter toggle', fakeAsync(() => {
@@ -92,31 +96,31 @@ describe('TransactionsComponent (strategy type tagging)', () => {
     fixture.detectChanges();
     tick();
 
-    component.onFilterChanged('unassigned');
+    component.onFilterChanged('untagged');
 
     expect(api.getTransactions).toHaveBeenCalledWith(
       jasmine.objectContaining({ tagged: false })
     );
   }));
 
-  it('passes strategy_type when selecting a strategy filter', fakeAsync(() => {
+  it('passes leg_type when selecting a leg type filter', fakeAsync(() => {
     fixture.detectChanges();
     tick();
 
-    component.onStrategyFilterSelected('WHEEL');
+    component.onLegTypeFilterSelected('CSP');
 
     expect(api.getTransactions).toHaveBeenCalledWith(
-      jasmine.objectContaining({ strategy_type: 'WHEEL' })
+      jasmine.objectContaining({ leg_type: 'CSP' })
     );
   }));
 
-  it('calls ApiService.setTransactionStrategyType when a strategy type is selected', fakeAsync(() => {
+  it('calls ApiService.patchLegType when a leg type is selected', fakeAsync(() => {
     fixture.detectChanges();
     tick();
 
     const tx = component.transactions[0];
-    component.onStrategyTypeSelected(tx, 'WHEEL');
+    component.onLegTypeSelected(tx, 'CSP');
 
-    expect(api.setTransactionStrategyType).toHaveBeenCalledWith('t1', 'WHEEL');
+    expect(api.patchLegType).toHaveBeenCalledWith('t1', 'CSP');
   }));
 });
