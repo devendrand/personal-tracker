@@ -118,7 +118,7 @@
 - [x] T032 [P] Remove dead imports/usages of portfolio-tagging on transactions in api/app/routers/transactions.py and web/src/app/features/transactions/transactions.component.ts
 - [x] T033 Run backend CI-equivalent checks: scripts/ci_local.sh (or `cd api && uv run ruff check . && uv run ruff format --check . && uv run mypy app --ignore-missing-imports && uv run pytest`)
 - [x] T034 Run frontend CI-equivalent checks: `cd web && npm ci && npm run lint && npm run build -- --configuration=production`
-- [ ] T035 Validate manual flows in specs/006-strategy-type-tagging/quickstart.md
+- [x] T035 Validate manual flows in specs/006-strategy-type-tagging/quickstart.md
 
 ---
 
