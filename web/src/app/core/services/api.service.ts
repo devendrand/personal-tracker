@@ -4,7 +4,8 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 import { Portfolio } from '../../shared/models/portfolio.model';
-import { Transaction, TransactionUploadResponse } from '../../shared/models/transaction.model';
+import { LegTypeOption, StrategyGroup, StrategyGroupCreate, Transaction, TransactionUploadResponse } from '../../shared/models/transaction.model';
+import { PnLSummaryResponse } from '../../features/pnl/models/pnl.models';
 
 /**
  * Base API service for making HTTP requests to the backend.
@@ -62,13 +63,13 @@ export class ApiService {
     return this.http.post<T>(`${this.baseUrl}${endpoint}`, formData);
   }
 
-  getTransactions(params?: { tagged?: boolean; strategy_type?: string }): Observable<Transaction[]> {
+  getTransactions(params?: { tagged?: boolean; leg_type?: string }): Observable<Transaction[]> {
     const search = new URLSearchParams();
     if (params?.tagged !== undefined) {
       search.set('tagged', String(params.tagged));
     }
-    if (params?.strategy_type) {
-      search.set('strategy_type', params.strategy_type);
+    if (params?.leg_type) {
+      search.set('leg_type', params.leg_type);
     }
     const suffix = search.toString() ? `?${search.toString()}` : '';
     return this.get<Transaction[]>(`/transactions${suffix}`);
@@ -82,15 +83,35 @@ export class ApiService {
     return this.get<Portfolio[]>('/portfolios');
   }
 
-  getStrategyTypes(): Observable<{ value: string; label: string; description: string }[]> {
-    return this.get<{ value: string; label: string; description: string }[]>(
-      '/transactions/strategy-types'
-    );
+  getLegTypes(): Observable<LegTypeOption[]> {
+    return this.get<LegTypeOption[]>('/transactions/leg-types');
   }
 
-  setTransactionStrategyType(transactionId: string, strategyType: string | null): Observable<Transaction> {
-    return this.patch<Transaction>(`/transactions/${transactionId}/strategy-type`, {
-      strategy_type: strategyType
+  patchLegType(transactionId: string, legType: string | null): Observable<Transaction> {
+    return this.patch<Transaction>(`/transactions/${transactionId}/leg-type`, {
+      leg_type: legType
     });
+  }
+
+  patchStrategyGroup(transactionId: string, strategyGroupId: string | null): Observable<Transaction> {
+    return this.patch<Transaction>(`/transactions/${transactionId}/strategy-group`, {
+      strategy_group_id: strategyGroupId
+    });
+  }
+
+  getStrategyGroups(): Observable<StrategyGroup[]> {
+    return this.get<StrategyGroup[]>('/strategy-groups');
+  }
+
+  createStrategyGroup(body: StrategyGroupCreate): Observable<StrategyGroup> {
+    return this.post<StrategyGroup>('/strategy-groups', body);
+  }
+
+  deleteStrategyGroup(groupId: string): Observable<void> {
+    return this.delete<void>(`/strategy-groups/${groupId}`);
+  }
+
+  getPnL(): Observable<PnLSummaryResponse> {
+    return this.get<PnLSummaryResponse>('/pnl');
   }
 }

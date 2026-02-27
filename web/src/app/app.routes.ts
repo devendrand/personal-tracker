@@ -24,6 +24,20 @@ export const routes: Routes = [
     redirectTo: 'dashboard',
     pathMatch: 'full'
   },
+  // Strategy Groups
+  {
+    path: 'strategy-groups',
+    loadChildren: () => import('./features/strategy-groups/strategy-groups.routes')
+      .then(m => m.STRATEGY_GROUPS_ROUTES),
+    title: 'Strategy Groups - Personal Tracker'
+  },
+  // PnL
+  {
+    path: 'pnl',
+    loadChildren: () => import('./features/pnl/pnl.routes')
+      .then(m => m.PNL_ROUTES),
+    title: 'PnL - Personal Tracker'
+  },
   // Swim Performance Tracker
   {
     path: 'swim',

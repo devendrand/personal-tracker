@@ -17,13 +17,11 @@ def _uuid_str() -> str:
     return str(uuid4())
 
 
-class StrategyType(StrEnum):
-    WHEEL = "WHEEL"
-    COVERED_CALL = "COVERED_CALL"
-    COLLAR = "COLLAR"
+class LegType(StrEnum):
     CSP = "CSP"
-    LONG_HOLD = "LONG_HOLD"
-    SIP = "SIP"
+    CC = "CC"
+    BUY = "BUY"
+    SELL = "SELL"
 
 
 class Portfolio(Base):
@@ -68,6 +66,24 @@ class ImportBatch(Base):
     )
 
 
+class StrategyGroup(Base):
+    __tablename__ = "strategy_group"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid_str)
+    user_sub: Mapped[str] = mapped_column(String(255), index=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    symbol: Mapped[str] = mapped_column(String(50), nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+    legs: Mapped[list[Transaction]] = relationship(
+        "Transaction", back_populates="strategy_group", passive_deletes=True
+    )
+
+
 class Transaction(Base):
     __tablename__ = "transaction"
 
@@ -101,8 +117,16 @@ class Transaction(Base):
     # Raw row storage for traceability.
     raw: Mapped[dict] = mapped_column(JSON, nullable=False)
 
-    # Strategy tagging (untagged is NULL)
-    strategy_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    # Leg type tagging (untagged is NULL)
+    leg_type: Mapped[str | None] = mapped_column(String(10), nullable=True)
+
+    # Strategy group association (unassigned is NULL)
+    strategy_group_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey("strategy_group.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
 
     # Used for duplicate prevention across uploads.
     dedupe_key: Mapped[str] = mapped_column(String(64), nullable=False)
@@ -113,6 +137,9 @@ class Transaction(Base):
     )
 
     import_batch: Mapped[ImportBatch] = relationship("ImportBatch", back_populates="transactions")
+    strategy_group: Mapped[StrategyGroup | None] = relationship(
+        "StrategyGroup", back_populates="legs"
+    )
 
 
 Index("ix_transaction_user_dedupe", Transaction.user_sub, Transaction.dedupe_key, unique=True)
