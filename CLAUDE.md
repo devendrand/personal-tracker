@@ -127,6 +127,8 @@ Artifacts live in `specs/<NNN>-<feature-name>/` (e.g. `specs/004-user-auth/`). T
 ## Active Technologies
 - Python 3.12 (backend), TypeScript / Angular 19 (frontend) + FastAPI, python-jose (JWT), Angular HttpClien (004-fix-dev-auth)
 - `localStorage` (client-side token cache only) — no DB changes (004-fix-dev-auth)
+- Python 3.12 (backend), TypeScript / Angular 19 (frontend) + FastAPI, SQLAlchemy 2.0 async, Pydantic v2, Alembic (backend); Angular Material, RxJS, Angular Signals (frontend) (007-pnl-leg-tagging)
+- PostgreSQL 17 with Alembic migrations (007-pnl-leg-tagging)
 
 ## Recent Changes
 - 004-fix-dev-auth: Added Python 3.12 (backend), TypeScript / Angular 19 (frontend) + FastAPI, python-jose (JWT), Angular HttpClien
